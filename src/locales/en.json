@@ -8,7 +8,19 @@
   "nav": {
     "home": "Home",
     "action": "Action",
+    "history": "History",
     "settings": "Settings"
+  },
+  "history": {
+    "title": "Score History",
+    "noData": "No data yet.\nComplete actions to see your progress here.",
+    "statsHighest": "Highest",
+    "statsAverage": "Average",
+    "statsActions": "Actions Done",
+    "chartLabel": "Progress Over Time",
+    "recentLabel": "Recent Records",
+    "today": "Today",
+    "yesterday": "Yesterday"
   },
   "quiz": {
     "title": "Find Your Type",
@@ -94,7 +106,46 @@
     "title": "Action Proposal",
     "generating": "Your partner is thinking...",
     "completeButton": "Done!",
-    "skipButton": "Skip"
+    "skipButton": "Skip",
+    "nextButton": "Get Next Action",
+    "homeButton": "Go Home",
+    "feedbackTitle": "Action Complete!",
+    "feedbackScore": "+5pt",
+    "feedbackCongrats": {
+      "teacher": "Good. That's how it's done. Don't slack on the next one.",
+      "counselor": "You did so well. I'm really proud of you.",
+      "scientist": "Action completed. Changes are occurring in your brain.",
+      "trainer": "AMAZING!! Keep that energy going!!"
+    },
+    "reactionLabel": "How was it?",
+    "reactionGreat": "Great",
+    "reactionOk": "Okay",
+    "reactionHard": "Tough"
+  },
+  "notifications": {
+    "sectionTitle": "Notifications",
+    "enableToggle": "Enable Notifications",
+    "reminderTime": "Daily Reminder Time",
+    "testButton": "Send Test Notification",
+    "permissionDenied": "Please enable notifications in Settings",
+    "daily": {
+      "teacher": ["Did you complete today's action? Don't run.", "Put down the phone. Right now.", "Don't waste tonight. Tomorrow needs you."],
+      "counselor": ["Good work today. How about giving your brain a little rest?", "Tonight, try putting the phone down and taking it slow.", "I see how hard you're trying. I'm proud of you."],
+      "scientist": ["Pre-sleep screen use inhibits melatonin production. Close it now.", "Night screen use reduces sleep quality by 40%.", "Optimize tonight's behavior for optimal brain recovery."],
+      "trainer": ["Did you burn today?! Let's finish strong!", "Night is your chance! Time for the final action!", "One last burn before sleep! Feed your brain!"]
+    },
+    "morning": {
+      "teacher": "Wake up. Today demands action.",
+      "counselor": "Good morning. Let's tackle today together.",
+      "scientist": "The morning prefrontal cortex performs at its peak. This is your window.",
+      "trainer": "You're up! Let's go all out today!!"
+    },
+    "intervention": {
+      "teacher": "Score is in the danger zone. No excuses. Take action now.",
+      "counselor": "Your score is dropping... Are you okay? Let's recover together.",
+      "scientist": "Brain score has fallen below critical threshold. Immediate intervention required.",
+      "trainer": "Score is in trouble! But you got this! Turn it around RIGHT NOW!!"
+    }
   },
   "settings": {
     "title": "Settings",

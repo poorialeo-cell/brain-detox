@@ -13,6 +13,11 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useI18n } from '../hooks/useI18n';
 import { useAppStore } from '../store/useAppStore';
 import { PartnerType, RootStackParamList } from '../types';
+import {
+  requestNotificationPermission,
+  scheduleDailyReminder,
+  getExpoPushToken,
+} from '../services/notificationService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PartnerResult'>;
 
@@ -28,7 +33,20 @@ const PARTNER_CONFIG: Record<
 
 export default function PartnerScreen({ route }: Props) {
   const { t } = useI18n();
-  const { setOnboardingComplete, brainScore } = useAppStore();
+  const { setOnboardingComplete, setNotificationsEnabled, setReminderTime, brainScore, reminderHour, reminderMinute } = useAppStore();
+
+  const handleStart = async () => {
+    // 通知権限をリクエスト（診断完了のポジティブな瞬間に聞く）
+    const granted = await requestNotificationPermission();
+    if (granted) {
+      setNotificationsEnabled(true);
+      await scheduleDailyReminder(reminderHour, reminderMinute, partner);
+      await getExpoPushToken(); // 将来のFirebase連携用にトークン取得
+    }
+    setOnboardingComplete(true);
+    // Firebase にプロフィールを同期
+    await useAppStore.getState().syncProfile();
+  };
   const { partner } = route.params;
   const config = PARTNER_CONFIG[partner];
 
@@ -129,7 +147,7 @@ export default function PartnerScreen({ route }: Props) {
       >
         <TouchableOpacity
           style={[styles.startButton, { backgroundColor: config.color }]}
-          onPress={() => setOnboardingComplete(true)}
+          onPress={handleStart}
           activeOpacity={0.85}
         >
           <Text style={styles.startButtonText}>{t('partner.startButton')}</Text>

@@ -9,6 +9,13 @@ export interface ActionSuggestion {
   isOffline?: boolean;
 }
 
+export interface ScoreEntry {
+  id?: string;
+  score: number;
+  timestamp: number;
+  actionTitle?: string;
+}
+
 export interface AppState {
   isOnboardingComplete: boolean;
   selectedPartner: PartnerType | null;
@@ -16,6 +23,11 @@ export interface AppState {
   language: Language;
   currentAction: ActionSuggestion | null;
   isActionLoading: boolean;
+  notificationsEnabled: boolean;
+  reminderHour: number;
+  reminderMinute: number;
+  userId: string | null;
+  scoreHistory: ScoreEntry[];
 }
 
 export type RootStackParamList = {
@@ -27,5 +39,6 @@ export type RootStackParamList = {
 export type MainTabParamList = {
   Home: undefined;
   Action: undefined;
+  History: undefined;
   Settings: undefined;
 };

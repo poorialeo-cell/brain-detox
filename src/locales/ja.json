@@ -8,7 +8,19 @@
   "nav": {
     "home": "ホーム",
     "action": "アクション",
+    "history": "履歴",
     "settings": "設定"
+  },
+  "history": {
+    "title": "スコア履歴",
+    "noData": "まだデータがありません。\nアクションを完了するとここに記録されます。",
+    "statsHighest": "最高スコア",
+    "statsAverage": "平均スコア",
+    "statsActions": "完了アクション",
+    "chartLabel": "過去の推移",
+    "recentLabel": "最近の記録",
+    "today": "今日",
+    "yesterday": "昨日"
   },
   "quiz": {
     "title": "あなたのタイプを診断",
@@ -94,7 +106,46 @@
     "title": "アクション提案",
     "generating": "パートナーが考え中...",
     "completeButton": "完了！",
-    "skipButton": "スキップ"
+    "skipButton": "スキップ",
+    "nextButton": "次のアクションを見る",
+    "homeButton": "ホームに戻る",
+    "feedbackTitle": "アクション完了！",
+    "feedbackScore": "+5pt",
+    "feedbackCongrats": {
+      "teacher": "よし。それでいい。次も手を抜くな。",
+      "counselor": "よく頑張ったね。本当に誇りに思うよ。",
+      "scientist": "行動を完了した。脳に変化が起きている。",
+      "trainer": "最高だ！！その調子でいけ！！"
+    },
+    "reactionLabel": "どうだった？",
+    "reactionGreat": "良かった",
+    "reactionOk": "普通",
+    "reactionHard": "きつかった"
+  },
+  "notifications": {
+    "sectionTitle": "通知",
+    "enableToggle": "通知を有効にする",
+    "reminderTime": "毎日のリマインド時間",
+    "testButton": "今すぐテスト送信",
+    "permissionDenied": "設定アプリから通知を許可してください",
+    "daily": {
+      "teacher": ["今日のアクションは完了したか？逃げるな。", "スマホを置け。今すぐだ。", "明日のために今夜を無駄にするな。"],
+      "counselor": ["今日も一日お疲れ様。少しだけ脳を休めようか。", "今夜こそスマホを置いて、ゆっくり過ごしてみよう。", "あなたの頑張り、ちゃんと見てるよ。"],
+      "scientist": ["就寝前のスクリーン使用はメラトニン分泌を妨げる。今すぐ閉じろ。", "夜間のスクリーン使用は睡眠の質を40%低下させる。", "脳の回復のために今夜の行動を最適化せよ。"],
+      "trainer": ["今日も燃えたか！！最後のアクションを決めよう！", "夜こそチャンスだ！今日の締めくくりを！", "眠る前にもう一燃え！！"]
+    },
+    "morning": {
+      "teacher": "おい、起きろ。今日も行動あるのみだ。",
+      "counselor": "おはよう。今日も一緒に頑張ろう。",
+      "scientist": "朝の前頭前野は最高のパフォーマンスを発揮する。今がチャンスだ。",
+      "trainer": "起きたか！今日も全力で行くぞ！！"
+    },
+    "intervention": {
+      "teacher": "スコアが危険域だ。言い訳は聞かない。今すぐアクションを取れ。",
+      "counselor": "スコアが下がってきてるよ…大丈夫？一緒に回復しよう。",
+      "scientist": "脳スコアが臨界値を下回った。今すぐ介入が必要だ。",
+      "trainer": "スコアがピンチだ！でも大丈夫！今すぐ立て直せ！！"
+    }
   },
   "settings": {
     "title": "設定",

@@ -1,4 +1,5 @@
 import { NavigationContainer } from '@react-navigation/native';
+import { navigationRef } from './navigationRef';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text } from 'react-native';
@@ -11,6 +12,7 @@ import QuizScreen from '../screens/QuizScreen';
 import PartnerScreen from '../screens/PartnerScreen';
 import HomeScreen from '../screens/HomeScreen';
 import ActionScreen from '../screens/ActionScreen';
+import HistoryScreen from '../screens/HistoryScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -45,6 +47,14 @@ function MainTabs() {
         }}
       />
       <Tab.Screen
+        name="History"
+        component={HistoryScreen}
+        options={{
+          tabBarLabel: t('nav.history'),
+          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>📊</Text>,
+        }}
+      />
+      <Tab.Screen
         name="Settings"
         component={SettingsScreen}
         options={{
@@ -60,7 +70,7 @@ export default function AppNavigator() {
   const isOnboardingComplete = useAppStore((s) => s.isOnboardingComplete);
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isOnboardingComplete ? (
           <>

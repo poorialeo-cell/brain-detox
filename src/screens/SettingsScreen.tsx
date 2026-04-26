@@ -8,10 +8,17 @@ import {
   StatusBar,
   ScrollView,
   Alert,
+  Switch,
 } from 'react-native';
 import { useI18n, i18n } from '../hooks/useI18n';
 import { useAppStore } from '../store/useAppStore';
 import { Language, PartnerType } from '../types';
+import {
+  requestNotificationPermission,
+  scheduleDailyReminder,
+  cancelAllNotifications,
+  sendTestNotification,
+} from '../services/notificationService';
 
 const PARTNER_CONFIG: Record<PartnerType, { emoji: string; color: string }> = {
   teacher:   { emoji: '🎯', color: '#f87171' },
@@ -28,7 +35,12 @@ const LANGUAGES: { code: Language; key: string; flag: string }[] = [
 
 export default function SettingsScreen() {
   const { t } = useI18n();
-  const { selectedPartner, language, brainScore, setLanguage, setOnboardingComplete, setSelectedPartner, resetAll } = useAppStore();
+  const {
+    selectedPartner, language, brainScore,
+    notificationsEnabled, reminderHour, reminderMinute,
+    setLanguage, setOnboardingComplete, setSelectedPartner,
+    setNotificationsEnabled, setReminderTime, resetAll,
+  } = useAppStore();
 
   const partner = selectedPartner ?? 'counselor';
   const pc = PARTNER_CONFIG[partner];
@@ -41,6 +53,28 @@ export default function SettingsScreen() {
   const handleChangePartner = () => {
     setOnboardingComplete(false);
     setSelectedPartner(null as any);
+  };
+
+  const handleNotificationToggle = async (value: boolean) => {
+    if (value) {
+      const granted = await requestNotificationPermission();
+      if (!granted) {
+        Alert.alert('', t('notifications.permissionDenied'));
+        return;
+      }
+      setNotificationsEnabled(true);
+      await scheduleDailyReminder(reminderHour, reminderMinute, partner);
+    } else {
+      setNotificationsEnabled(false);
+      await cancelAllNotifications();
+    }
+  };
+
+  const handleTimeSelect = async (hour: number) => {
+    setReminderTime(hour, 0);
+    if (notificationsEnabled) {
+      await scheduleDailyReminder(hour, 0, partner);
+    }
   };
 
   const handleReset = () => {
@@ -124,6 +158,57 @@ export default function SettingsScreen() {
               {idx < LANGUAGES.length - 1 && <View style={styles.divider} />}
             </View>
           ))}
+        </View>
+
+        {/* ── 通知セクション ── */}
+        <Text style={styles.sectionLabel}>{t('notifications.sectionTitle')}</Text>
+        <View style={styles.card}>
+          {/* 通知オン/オフ */}
+          <View style={styles.switchRow}>
+            <Text style={styles.rowButtonTitle}>{t('notifications.enableToggle')}</Text>
+            <Switch
+              value={notificationsEnabled}
+              onValueChange={handleNotificationToggle}
+              trackColor={{ false: '#333', true: '#a78bfa' }}
+              thumbColor={notificationsEnabled ? '#fff' : '#666'}
+            />
+          </View>
+
+          {notificationsEnabled && (
+            <>
+              <View style={styles.divider} />
+              {/* リマインド時間選択 */}
+              <View style={styles.timeSectionInner}>
+                <Text style={styles.timeLabel}>{t('notifications.reminderTime')}</Text>
+                <View style={styles.timeGrid}>
+                  {[18, 19, 20, 21, 22, 23].map((h) => (
+                    <TouchableOpacity
+                      key={h}
+                      style={[styles.timeChip, reminderHour === h && styles.timeChipActive]}
+                      onPress={() => handleTimeSelect(h)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.timeChipText, reminderHour === h && styles.timeChipTextActive]}>
+                        {h}:00
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.divider} />
+
+              {/* テスト送信 */}
+              <TouchableOpacity
+                style={styles.rowButton}
+                onPress={() => sendTestNotification(partner)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.rowButtonTitle}>{t('notifications.testButton')}</Text>
+                <Text style={styles.rowButtonArrow}>›</Text>
+              </TouchableOpacity>
+            </>
+          )}
         </View>
 
         {/* ── データ管理セクション ── */}
@@ -238,5 +323,48 @@ const styles = StyleSheet.create({
     color: '#333',
     fontWeight: '500',
     marginTop: 8,
+  },
+
+  switchRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 18,
+  },
+  timeSectionInner: {
+    padding: 18,
+    gap: 12,
+  },
+  timeLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#555',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  timeGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  timeChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#222',
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  timeChipActive: {
+    backgroundColor: '#1e1433',
+    borderColor: '#a78bfa',
+  },
+  timeChipText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+  },
+  timeChipTextActive: {
+    color: '#a78bfa',
   },
 });

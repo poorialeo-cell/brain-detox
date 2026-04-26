@@ -6,6 +6,14 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "color": "#a78bfa"
+        }
+      ]
+    ],
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
