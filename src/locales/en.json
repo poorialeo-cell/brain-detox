@@ -1,0 +1,105 @@
+{
+  "common": {
+    "next": "Next",
+    "back": "Back",
+    "loading": "Loading...",
+    "error": "Something went wrong"
+  },
+  "nav": {
+    "home": "Home",
+    "action": "Action",
+    "settings": "Settings"
+  },
+  "quiz": {
+    "title": "Find Your Type",
+    "subtitle": "Answer 5 questions to find your partner",
+    "q1": {
+      "question": "How often do you watch short videos?",
+      "a0": "Rarely",
+      "a1": "A few times a week",
+      "a2": "1–2 hours daily",
+      "a3": "3+ hours daily"
+    },
+    "q2": {
+      "question": "How do you feel after watching?",
+      "a0": "Refreshed & satisfied",
+      "a1": "Nothing in particular",
+      "a2": "Slightly regretful",
+      "a3": "Strong regret / self-loathing"
+    },
+    "q3": {
+      "question": "Do you end up on your phone when you meant to focus?",
+      "a0": "Almost never",
+      "a1": "Sometimes",
+      "a2": "Often",
+      "a3": "All the time"
+    },
+    "q4": {
+      "question": "When you want to change, what words hit hardest?",
+      "a0": "\"Stop making excuses — just do it\" 🔥",
+      "a1": "\"That must've been tough\" 🌸",
+      "a2": "\"Scientifically, here's why\" 🔬",
+      "a3": "\"Let's burn together!\" 💪"
+    },
+    "q5": {
+      "question": "What do you want from your support person?",
+      "a0": "Strict management 🎯",
+      "a1": "Quiet companionship 💝",
+      "a2": "Guidance toward independence 🧬",
+      "a3": "Passionate encouragement ⚡"
+    }
+  },
+  "partner": {
+    "teacher": {
+      "name": "Rin",
+      "description": "A strict teacher who values discipline and won't accept excuses.\nBehind the tough words is the deepest trust.",
+      "catchphrase": "\"Don't run. You can do this.\""
+    },
+    "counselor": {
+      "name": "Iyashi",
+      "description": "A counselor with high empathy who wraps you in warmth.\nAt your pace, one step at a time.",
+      "catchphrase": "\"No need to rush. I'm right here.\""
+    },
+    "scientist": {
+      "name": "Ri",
+      "description": "A calm scientist who explains addiction through data and logic.\nFacts — not emotions — will change you.",
+      "catchphrase": "\"Addiction is a brain issue. Understand the mechanism and you can solve it.\""
+    },
+    "trainer": {
+      "name": "Go",
+      "description": "An enthusiastic trainer who recommends physical action with full passion.\nLet's break through our limits together!",
+      "catchphrase": "\"Stop thinking — move! Right now!\""
+    },
+    "resultTitle": "Your partner is",
+    "startButton": "Let's start together!",
+    "brainScoreLabel": "Your initial score"
+  },
+  "home": {
+    "title": "YOUR BRAIN",
+    "scoreLabel": "Brain Score",
+    "level1": "Brain Rot",
+    "level2": "Warning",
+    "level3": "Stable",
+    "level4": "Flourishing",
+    "level5": "Transcendent",
+    "actionButton": "Get Recovery Action Now",
+    "partnerGreeting": {
+      "teacher": "Don't get comfortable. Today demands action.",
+      "counselor": "Good to see you again. Let's take it one step at a time.",
+      "scientist": "Data reviewed. Let me suggest today's optimal action.",
+      "trainer": "Let's go! Full throttle today!"
+    }
+  },
+  "action": {
+    "title": "Action Proposal",
+    "generating": "Your partner is thinking...",
+    "completeButton": "Done!",
+    "skipButton": "Skip"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "partner": "Change Partner",
+    "resetData": "Reset Data"
+  }
+}
