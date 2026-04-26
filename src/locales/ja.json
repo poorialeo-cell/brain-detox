@@ -98,8 +98,21 @@
   },
   "settings": {
     "title": "設定",
-    "language": "言語",
-    "partner": "パートナー変更",
-    "resetData": "データをリセット"
+    "sectionPartner": "パートナー",
+    "currentPartner": "現在のパートナー",
+    "changePartner": "パートナーを変更する",
+    "changePartnerDesc": "診断をやり直してパートナーを変更します",
+    "sectionLanguage": "言語",
+    "langJa": "日本語",
+    "langEn": "English",
+    "langTh": "ภาษาไทย",
+    "sectionData": "データ管理",
+    "resetData": "データをリセット",
+    "resetDataDesc": "すべての進捗・スコアが削除されます",
+    "resetConfirmTitle": "本当にリセットしますか？",
+    "resetConfirmMessage": "すべてのデータ（スコア・パートナー・進捗）が削除されます。この操作は元に戻せません。",
+    "resetConfirmYes": "リセットする",
+    "resetConfirmNo": "キャンセル",
+    "version": "バージョン"
   }
 }

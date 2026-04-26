@@ -45,5 +45,23 @@
     }
   },
   "action": { "title": "ข้อเสนอกิจกรรม", "generating": "พาร์ทเนอร์กำลังคิด...", "completeButton": "เสร็จแล้ว!", "skipButton": "ข้าม" },
-  "settings": { "title": "การตั้งค่า", "language": "ภาษา", "partner": "เปลี่ยนพาร์ทเนอร์", "resetData": "รีเซ็ตข้อมูล" }
+  "settings": {
+    "title": "การตั้งค่า",
+    "sectionPartner": "พาร์ทเนอร์",
+    "currentPartner": "พาร์ทเนอร์ปัจจุบัน",
+    "changePartner": "เปลี่ยนพาร์ทเนอร์",
+    "changePartnerDesc": "ทำแบบทดสอบใหม่เพื่อเปลี่ยนพาร์ทเนอร์",
+    "sectionLanguage": "ภาษา",
+    "langJa": "日本語",
+    "langEn": "English",
+    "langTh": "ภาษาไทย",
+    "sectionData": "จัดการข้อมูล",
+    "resetData": "รีเซ็ตข้อมูลทั้งหมด",
+    "resetDataDesc": "ความคืบหน้าและคะแนนทั้งหมดจะถูกลบ",
+    "resetConfirmTitle": "แน่ใจไหม?",
+    "resetConfirmMessage": "ข้อมูลทั้งหมด (คะแนน พาร์ทเนอร์ ความคืบหน้า) จะถูกลบ ไม่สามารถเลิกทำได้",
+    "resetConfirmYes": "รีเซ็ต",
+    "resetConfirmNo": "ยกเลิก",
+    "version": "เวอร์ชัน"
+  }
 }

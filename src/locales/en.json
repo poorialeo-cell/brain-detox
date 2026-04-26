@@ -98,8 +98,21 @@
   },
   "settings": {
     "title": "Settings",
-    "language": "Language",
-    "partner": "Change Partner",
-    "resetData": "Reset Data"
+    "sectionPartner": "Partner",
+    "currentPartner": "Current Partner",
+    "changePartner": "Change Partner",
+    "changePartnerDesc": "Retake the quiz to get a new partner",
+    "sectionLanguage": "Language",
+    "langJa": "日本語",
+    "langEn": "English",
+    "langTh": "ภาษาไทย",
+    "sectionData": "Data",
+    "resetData": "Reset All Data",
+    "resetDataDesc": "All progress and scores will be deleted",
+    "resetConfirmTitle": "Are you sure?",
+    "resetConfirmMessage": "All data (score, partner, progress) will be deleted. This cannot be undone.",
+    "resetConfirmYes": "Reset",
+    "resetConfirmNo": "Cancel",
+    "version": "Version"
   }
 }
