@@ -45,7 +45,25 @@
     "scoreDelta": "スコアが変化しました",
     "continueButton": "続ける"
   },
-  "action": {"difficulty": {"easy": "かんたん", "medium": "ふつう", "hard": "ハード"}},
+  "action": {
+    "difficulty": {"easy": "かんたん", "medium": "ふつう", "hard": "ハード"},
+    "startGuide": "ガイドで始める ✨",
+    "guideSkip": "スキップして完了"
+  },
+  "breathing": {
+    "inhale": "吸って",
+    "hold": "止めて",
+    "exhale": "吐いて",
+    "cycleOf": "/ {{total}} サイクル",
+    "complete": "完了！",
+    "ready": "準備ができたらタップ"
+  },
+  "timer": {
+    "complete": "時間になりました！",
+    "pause": "一時停止",
+    "resume": "再開",
+    "finish": "完了して次へ"
+  },
   "nav": {
     "home": "ホーム",
     "action": "アクション",

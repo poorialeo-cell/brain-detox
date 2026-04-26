@@ -19,6 +19,7 @@ interface AppStore extends AppState {
   // 基本設定
   setOnboardingComplete: (value: boolean) => void;
   setSelectedPartner: (partner: PartnerType) => void;
+  setBrainScore: (score: number) => void;
   setLanguage: (lang: Language) => void;
   setUserId: (id: string) => void;
 
@@ -76,6 +77,7 @@ export const useAppStore = create<AppStore>()(
 
       setOnboardingComplete: (value) => set({ isOnboardingComplete: value }),
       setSelectedPartner: (partner) => set({ selectedPartner: partner }),
+      setBrainScore: (score) => set({ brainScore: Math.min(100, Math.max(0, score)) }),
       setLanguage: (lang) => set({ language: lang }),
       setUserId: (id) => set({ userId: id }),
 

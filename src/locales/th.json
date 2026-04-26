@@ -27,7 +27,25 @@
     "scoreDelta": "คะแนนเปลี่ยนแปลง",
     "continueButton": "ดำเนินต่อ"
   },
-  "action": {"difficulty": {"easy": "ง่าย", "medium": "ปานกลาง", "hard": "ยาก"}},
+  "action": {
+    "difficulty": {"easy": "ง่าย", "medium": "ปานกลาง", "hard": "ยาก"},
+    "startGuide": "เริ่มคำแนะนำ ✨",
+    "guideSkip": "ข้ามและเสร็จสิ้น"
+  },
+  "breathing": {
+    "inhale": "หายใจเข้า",
+    "hold": "กลั้นหายใจ",
+    "exhale": "หายใจออก",
+    "cycleOf": "/ {{total}} รอบ",
+    "complete": "เสร็จสิ้น!",
+    "ready": "แตะเมื่อพร้อม"
+  },
+  "timer": {
+    "complete": "หมดเวลา!",
+    "pause": "หยุดชั่วคราว",
+    "resume": "ดำเนินต่อ",
+    "finish": "เสร็จแล้ว & ถัดไป"
+  },
   "nav": {
     "home": "หน้าหลัก",
     "action": "กิจกรรม",

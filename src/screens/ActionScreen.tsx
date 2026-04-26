@@ -11,6 +11,8 @@ import { useAppStore } from '../store/useAppStore';
 import { PartnerType, MainTabParamList } from '../types';
 import { useHaptics } from '../hooks/useHaptics';
 import GradientBackground from '../components/GradientBackground';
+import BreathingGuide from '../components/BreathingGuide';
+import TimerGuide from '../components/TimerGuide';
 
 type ActionNav = BottomTabNavigationProp<MainTabParamList, 'Action'>;
 
@@ -158,7 +160,8 @@ export default function ActionScreen() {
   const partner = selectedPartner ?? 'counselor';
   const pc = PARTNER_CONFIG[partner];
 
-  const [showFeedback, setShowFeedback] = useState(false);
+  type ScreenState = 'action' | 'guide' | 'feedback';
+  const [screenState, setScreenState] = useState<ScreenState>('action');
   const haptics = useHaptics();
 
   const cardOpacity    = useRef(new Animated.Value(0)).current;
@@ -166,7 +169,7 @@ export default function ActionScreen() {
 
   // 画面フォーカス時にアクションがなければ自動取得
   useFocusEffect(useCallback(() => {
-    if (!currentAction && !isActionLoading && !showFeedback) {
+    if (!currentAction && !isActionLoading && screenState === 'action') {
       fetchAction();
     }
   }, []));
@@ -175,6 +178,7 @@ export default function ActionScreen() {
     if (currentAction) {
       cardOpacity.setValue(0);
       cardTranslateY.setValue(30);
+      setScreenState('action');
       Animated.parallel([
         Animated.timing(cardOpacity,    { toValue: 1, duration: 380, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
         Animated.timing(cardTranslateY, { toValue: 0, duration: 380, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
@@ -185,7 +189,24 @@ export default function ActionScreen() {
   const handleComplete = () => {
     haptics.success();
     completeAction();
-    setShowFeedback(true);
+    setScreenState('feedback');
+  };
+
+  const handleGuideComplete = () => {
+    haptics.success();
+    completeAction();
+    setScreenState('feedback');
+  };
+
+  const handleGuideSkip = () => {
+    haptics.light();
+    completeAction();
+    setScreenState('feedback');
+  };
+
+  const handleStartGuide = () => {
+    haptics.medium();
+    setScreenState('guide');
   };
 
   const handleSkip = () => {
@@ -196,13 +217,13 @@ export default function ActionScreen() {
 
   const handleNext = () => {
     haptics.medium();
-    setShowFeedback(false);
+    setScreenState('action');
     fetchAction();
   };
 
   const handleHome = () => {
     haptics.light();
-    setShowFeedback(false);
+    setScreenState('action');
     navigation.navigate('Home');
   };
 
@@ -212,7 +233,7 @@ export default function ActionScreen() {
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
       {/* ヘッダー */}
-      {!showFeedback && (
+      {screenState === 'action' && (
         <View style={styles.header}>
           <Text style={styles.headerTitle}>{t('action.title')}</Text>
           {!isActionLoading && (
@@ -224,8 +245,25 @@ export default function ActionScreen() {
       )}
 
       {/* コンテンツ切り替え */}
-      {showFeedback ? (
+      {screenState === 'feedback' ? (
         <FeedbackView partner={partner} brainScore={brainScore} onNext={handleNext} onHome={handleHome} />
+      ) : screenState === 'guide' && currentAction ? (
+        currentAction.interactiveType === 'breathing' && currentAction.breathingConfig ? (
+          <BreathingGuide
+            config={currentAction.breathingConfig}
+            partnerColor={pc.color}
+            onComplete={handleGuideComplete}
+            onSkip={handleGuideSkip}
+          />
+        ) : currentAction.interactiveType === 'timer' && currentAction.timerConfig ? (
+          <TimerGuide
+            config={currentAction.timerConfig}
+            partnerColor={pc.color}
+            actionTitle={currentAction.title}
+            onComplete={handleGuideComplete}
+            onSkip={handleGuideSkip}
+          />
+        ) : null
       ) : isActionLoading ? (
         <LoadingView partner={partner} />
       ) : currentAction ? (
@@ -270,8 +308,18 @@ export default function ActionScreen() {
 
           {/* ボタン */}
           <Animated.View style={[styles.buttonsContainer, { opacity: cardOpacity }]}>
-            <TouchableOpacity style={[styles.completeBtn, { backgroundColor: pc.color }]} onPress={handleComplete} activeOpacity={0.85}>
-              <Text style={styles.completeBtnText}>{t('action.completeButton')} +5pt</Text>
+            {/* ガイドで始めるボタン（インタラクティブアクションのみ） */}
+            {currentAction.interactiveType !== 'none' && (
+              <TouchableOpacity
+                style={[styles.guideBtn, { borderColor: pc.color + '88', backgroundColor: pc.color + '15' }]}
+                onPress={handleStartGuide}
+                activeOpacity={0.85}
+              >
+                <Text style={[styles.guideBtnText, { color: pc.color }]}>{t('action.startGuide')}</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity style={[styles.completeBtn, { backgroundColor: currentAction.interactiveType !== 'none' ? '#222' : pc.color, borderWidth: currentAction.interactiveType !== 'none' ? 1 : 0, borderColor: '#333' }]} onPress={handleComplete} activeOpacity={0.85}>
+              <Text style={[styles.completeBtnText, { color: currentAction.interactiveType !== 'none' ? '#666' : '#000' }]}>{t('action.completeButton')} +5pt</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.skipBtn} onPress={handleSkip} activeOpacity={0.7}>
               <Text style={styles.skipBtnText}>{t('action.skipButton')}</Text>
@@ -322,6 +370,8 @@ const styles = StyleSheet.create({
 
   /* ボタン */
   buttonsContainer: { gap: 12, marginTop: 4 },
+  guideBtn: { borderRadius: 16, paddingVertical: 18, alignItems: 'center', borderWidth: 1 },
+  guideBtnText: { fontSize: 17, fontWeight: '900', letterSpacing: 0.3 },
   completeBtn: { borderRadius: 16, paddingVertical: 18, alignItems: 'center' },
   completeBtnText: { color: '#000', fontSize: 17, fontWeight: '900', letterSpacing: 0.3 },
   skipBtn: { alignItems: 'center', paddingVertical: 12 },

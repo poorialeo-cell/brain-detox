@@ -45,7 +45,25 @@
     "scoreDelta": "Score has changed",
     "continueButton": "Continue"
   },
-  "action": {"difficulty": {"easy": "Easy", "medium": "Medium", "hard": "Hard"}},
+  "action": {
+    "difficulty": {"easy": "Easy", "medium": "Medium", "hard": "Hard"},
+    "startGuide": "Start Guide ✨",
+    "guideSkip": "Skip & Complete"
+  },
+  "breathing": {
+    "inhale": "Inhale",
+    "hold": "Hold",
+    "exhale": "Exhale",
+    "cycleOf": "/ {{total}} cycles",
+    "complete": "Complete!",
+    "ready": "Tap when ready"
+  },
+  "timer": {
+    "complete": "Time's up!",
+    "pause": "Pause",
+    "resume": "Resume",
+    "finish": "Done & Next"
+  },
   "nav": {
     "home": "Home",
     "action": "Action",

@@ -5,12 +5,29 @@ export type PartnerType = 'teacher' | 'counselor' | 'scientist' | 'trainer';
 export type Language = 'ja' | 'en' | 'th';
 export type RecoveryEffectSize = 'small' | 'medium' | 'large';
 
+// ── インタラクティブガイド ────────────────────────────────────────────
+export type InteractiveType = 'none' | 'breathing' | 'timer';
+
+export interface BreathingConfig {
+  inhaleSeconds: number;
+  holdSeconds: number;
+  exhaleSeconds: number;
+  cycles: number;
+}
+
+export interface TimerConfig {
+  durationSeconds: number;
+}
+
 export interface ActionSuggestion {
   title: string;
   description: string;
   duration: string;
   partnerMessage: string;
   difficulty: ActionDifficulty;
+  interactiveType: InteractiveType;
+  breathingConfig?: BreathingConfig;
+  timerConfig?: TimerConfig;
   isOffline?: boolean;
 }
 
