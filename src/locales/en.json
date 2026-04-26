@@ -45,11 +45,6 @@
     "scoreDelta": "Score has changed",
     "continueButton": "Continue"
   },
-  "action": {
-    "difficulty": {"easy": "Easy", "medium": "Medium", "hard": "Hard"},
-    "startGuide": "Start Guide ✨",
-    "guideSkip": "Skip & Complete"
-  },
   "breathing": {
     "inhale": "Inhale",
     "hold": "Hold",
@@ -179,7 +174,10 @@
     "reactionLabel": "How was it?",
     "reactionGreat": "Great",
     "reactionOk": "Okay",
-    "reactionHard": "Tough"
+    "reactionHard": "Tough",
+    "difficulty": {"easy": "Easy", "medium": "Medium", "hard": "Hard"},
+    "startGuide": "Start Guide ✨",
+    "guideSkip": "Skip & Complete"
   },
   "notifications": {
     "sectionTitle": "Notifications",

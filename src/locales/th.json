@@ -27,11 +27,6 @@
     "scoreDelta": "คะแนนเปลี่ยนแปลง",
     "continueButton": "ดำเนินต่อ"
   },
-  "action": {
-    "difficulty": {"easy": "ง่าย", "medium": "ปานกลาง", "hard": "ยาก"},
-    "startGuide": "เริ่มคำแนะนำ ✨",
-    "guideSkip": "ข้ามและเสร็จสิ้น"
-  },
   "breathing": {
     "inhale": "หายใจเข้า",
     "hold": "กลั้นหายใจ",
@@ -115,7 +110,10 @@
     "reactionLabel": "เป็นอย่างไรบ้าง?",
     "reactionGreat": "ดีมาก",
     "reactionOk": "ปกติ",
-    "reactionHard": "ยาก"
+    "reactionHard": "ยาก",
+    "difficulty": {"easy": "ง่าย", "medium": "ปานกลาง", "hard": "ยาก"},
+    "startGuide": "เริ่มคำแนะนำ ✨",
+    "guideSkip": "ข้ามและเสร็จสิ้น"
   },
   "notifications": {
     "sectionTitle": "การแจ้งเตือน",

@@ -213,8 +213,15 @@ function buildUserMessage({ brainScore, language }: GenerateActionParams): strin
     th: 'ภาษาไทย',
   };
 
+  // スコアに応じた難易度ヒント
+  const difficultyHint =
+    brainScore >= 70 ? 'medium または hard（元気があるので、少し挑戦的なアクションを）' :
+    brainScore >= 40 ? 'easy または medium（バランスよく提案して）' :
+                       'easy（スコアが低いので、まず取り組みやすいアクションから）';
+
   return `ユーザーの現在の状態:
 - ブレインスコア: ${brainScore}/100 (${getScoreLabel(brainScore)})
+- 推奨難易度: ${difficultyHint}
 - 回答言語: ${langLabel[language]}
 
 上記の状態に基づき、今このユーザーに最適な回復アクションを1つ提案してください。
@@ -223,7 +230,7 @@ function buildUserMessage({ brainScore, language }: GenerateActionParams): strin
   "title": "アクションのタイトル（15文字以内）",
   "description": "具体的な手順（60〜120文字）",
   "duration": "所要時間（例: 2分、5分、10分）",
-  "difficulty": "easy または medium または hard",
+  "difficulty": "easy（1〜2分以内・その場でできる）/ medium（3〜10分・少し努力が必要）/ hard（10分以上・本格的な取り組み）のいずれか",
   "partnerMessage": "パートナーらしい一言（20〜40文字）",
   "interactiveType": "none または breathing または timer",
   "breathingConfig": {

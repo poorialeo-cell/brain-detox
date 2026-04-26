@@ -45,11 +45,6 @@
     "scoreDelta": "スコアが変化しました",
     "continueButton": "続ける"
   },
-  "action": {
-    "difficulty": {"easy": "かんたん", "medium": "ふつう", "hard": "ハード"},
-    "startGuide": "ガイドで始める ✨",
-    "guideSkip": "スキップして完了"
-  },
   "breathing": {
     "inhale": "吸って",
     "hold": "止めて",
@@ -179,7 +174,10 @@
     "reactionLabel": "どうだった？",
     "reactionGreat": "良かった",
     "reactionOk": "普通",
-    "reactionHard": "きつかった"
+    "reactionHard": "きつかった",
+    "difficulty": {"easy": "かんたん", "medium": "ふつう", "hard": "ハード"},
+    "startGuide": "ガイドで始める ✨",
+    "guideSkip": "スキップして完了"
   },
   "notifications": {
     "sectionTitle": "通知",
