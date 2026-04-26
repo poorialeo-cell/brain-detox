@@ -1,18 +1,19 @@
-import React from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  StatusBar,
+  View, Text, StyleSheet, TouchableOpacity,
+  SafeAreaView, StatusBar, Animated, Easing, Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useI18n } from '../hooks/useI18n';
 import { useAppStore } from '../store/useAppStore';
 import BrainVisual from '../components/BrainVisual';
+import BrainRecoveryEffect from '../components/BrainRecoveryEffect';
+import GradientBackground from '../components/GradientBackground';
+import { useHaptics } from '../hooks/useHaptics';
 import { PartnerType, MainTabParamList } from '../types';
+import { getLevelFromXP } from '../services/scoringService';
 
 type HomeNav = BottomTabNavigationProp<MainTabParamList, 'Home'>;
 
@@ -37,22 +38,54 @@ function getLevelConfig(score: number) {
 
 export default function HomeScreen() {
   const { t } = useI18n();
+  const haptics = useHaptics();
   const navigation = useNavigation<HomeNav>();
-  const { brainScore, selectedPartner } = useAppStore();
+  const { brainScore, totalXP, selectedPartner, pendingRecoveryEffect, clearRecoveryEffect } = useAppStore();
 
   const partner = selectedPartner ?? 'counselor';
   const pc = PARTNER_CONFIG[partner];
   const lc = getLevelConfig(brainScore);
+  const levelInfo = getLevelFromXP(totalXP);
+
+  // フォーカス時に回復エフェクトを起動
+  const [showEffect, setShowEffect] = React.useState(false);
+  useFocusEffect(useCallback(() => {
+    if (pendingRecoveryEffect) {
+      setShowEffect(true);
+    }
+  }, [pendingRecoveryEffect]));
+
+  // パートナーアバターのフロートアニメーション
+  const floatAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim, { toValue: -6, duration: 1800, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(floatAnim, { toValue: 0,  duration: 1800, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0d0d0d" />
+    <GradientBackground>
+    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
       <View style={styles.inner}>
 
         {/* ── ヘッダー ── */}
         <View style={styles.header}>
-          <Text style={styles.headerLabel}>{t('home.title')}</Text>
+          <View>
+            <Text style={styles.headerLabel}>{t('home.title')}</Text>
+            <View style={styles.levelRow}>
+              <Text style={styles.levelBadgeSmall}>
+                {t('level.label')}{levelInfo.level}
+              </Text>
+              <Text style={styles.levelNameSmall}>
+                {t(levelInfo.nameKey)}
+              </Text>
+            </View>
+          </View>
           <View style={styles.scoreBox}>
             <Text style={[styles.scoreNumber, { color: lc.color }]}>{brainScore}</Text>
             <Text style={styles.scoreMax}>/100</Text>
@@ -61,7 +94,21 @@ export default function HomeScreen() {
 
         {/* ── 脳ビジュアル ── */}
         <View style={styles.brainSection}>
-          <BrainVisual score={brainScore} />
+          <View>
+            <BrainVisual score={brainScore} />
+            {showEffect && pendingRecoveryEffect && (
+              <View style={styles.effectWrapper}>
+                <BrainRecoveryEffect
+                  size={pendingRecoveryEffect}
+                  color={lc.color}
+                  onComplete={() => {
+                    setShowEffect(false);
+                    clearRecoveryEffect();
+                  }}
+                />
+              </View>
+            )}
+          </View>
           <View style={styles.levelBadge}>
             <Text style={styles.levelEmoji}>{lc.emoji}</Text>
             <Text style={[styles.levelText, { color: lc.color }]}>{t(lc.key)}</Text>
@@ -70,9 +117,9 @@ export default function HomeScreen() {
 
         {/* ── パートナー＋吹き出し ── */}
         <View style={styles.partnerRow}>
-          <View style={[styles.avatar, { borderColor: pc.color + '66' }]}>
+          <Animated.View style={[styles.avatar, { borderColor: pc.color + '88', transform: [{ translateY: floatAnim }] }]}>
             <Text style={styles.avatarEmoji}>{pc.emoji}</Text>
-          </View>
+          </Animated.View>
           <View style={styles.bubbleWrapper}>
             {/* 吹き出しの尻尾 */}
             <View style={[styles.bubbleTail, { borderRightColor: pc.color + '55' }]} />
@@ -93,7 +140,7 @@ export default function HomeScreen() {
         {/* ── アクションボタン ── */}
         <TouchableOpacity
           style={[styles.actionBtn, { borderColor: pc.color + '77' }]}
-          onPress={() => navigation.navigate('Action')}
+          onPress={() => { haptics.medium(); navigation.navigate('Action'); }}
           activeOpacity={0.8}
         >
           <Text style={styles.actionBtnIcon}>⚡</Text>
@@ -102,6 +149,7 @@ export default function HomeScreen() {
 
       </View>
     </SafeAreaView>
+    </GradientBackground>
   );
 }
 
@@ -113,16 +161,43 @@ const styles = StyleSheet.create({
   inner: {
     flex: 1,
     paddingHorizontal: 22,
-    paddingBottom: 12,
+    paddingBottom: Platform.OS === 'ios' ? 110 : 90,
     justifyContent: 'space-between',
+  },
+
+  effectWrapper: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   /* ヘッダー */
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingTop: 10,
+  },
+  levelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 4,
+  },
+  levelBadgeSmall: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#a78bfa',
+    backgroundColor: '#1e1433',
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  levelNameSmall: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#666',
   },
   headerLabel: {
     fontSize: 11,

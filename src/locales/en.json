@@ -5,6 +5,47 @@
     "loading": "Loading...",
     "error": "Something went wrong"
   },
+  "level": {
+    "label": "Lv.",
+    "xpLabel": "XP",
+    "names": {
+      "1": "Sprout", "2": "Awakening", "3": "Growth", "4": "Bloom", "5": "Resonance",
+      "6": "Awakened", "7": "Guardian", "8": "Sage", "9": "Enlightened", "10": "Sacred Brain"
+    }
+  },
+  "brainRotTest": {
+    "title": "Brain Rot Status Test",
+    "subtitle": "Be honest. The data will help you.",
+    "skipButton": "Skip",
+    "badge": "Periodic Check",
+    "q1": {
+      "question": "How many hours did you watch short videos today?",
+      "a0": "Barely watched (under 30 min)",
+      "a1": "1–2 hours",
+      "a2": "2–4 hours",
+      "a3": "4+ hours"
+    },
+    "q2": {
+      "question": "How many times did you end up on your phone when trying to focus?",
+      "a0": "Almost never",
+      "a1": "2–3 times",
+      "a2": "Many times",
+      "a3": "Constantly"
+    },
+    "q3": {
+      "question": "How would you honestly rate your brain right now?",
+      "a0": "Sharp and focused",
+      "a1": "Pretty normal",
+      "a2": "A little foggy",
+      "a3": "Very foggy, no motivation"
+    },
+    "resultPositive": "You're in good shape! Keep it up.",
+    "resultNeutral": "Normal state.",
+    "resultNegative": "Recovery needed. Take an action to bounce back.",
+    "scoreDelta": "Score has changed",
+    "continueButton": "Continue"
+  },
+  "action": {"difficulty": {"easy": "Easy", "medium": "Medium", "hard": "Hard"}},
   "nav": {
     "home": "Home",
     "action": "Action",

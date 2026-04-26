@@ -233,7 +233,7 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0d0d0d' },
-  scroll: { paddingHorizontal: 22, paddingBottom: 40 },
+  scroll: { paddingHorizontal: 22, paddingBottom: 110 },
 
   pageTitle: {
     fontSize: 28,

@@ -9,8 +9,16 @@ import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useI18n } from '../hooks/useI18n';
 import { useAppStore } from '../store/useAppStore';
 import { PartnerType, MainTabParamList } from '../types';
+import { useHaptics } from '../hooks/useHaptics';
+import GradientBackground from '../components/GradientBackground';
 
 type ActionNav = BottomTabNavigationProp<MainTabParamList, 'Action'>;
+
+function getDifficultyColor(diff?: string) {
+  if (diff === 'easy')   return '#4ade80';
+  if (diff === 'hard')   return '#f87171';
+  return '#fbbf24';
+}
 
 const PARTNER_CONFIG: Record<PartnerType, { emoji: string; color: string; bgColor: string }> = {
   teacher:   { emoji: '🎯', color: '#f87171', bgColor: '#2a1010' },
@@ -151,6 +159,7 @@ export default function ActionScreen() {
   const pc = PARTNER_CONFIG[partner];
 
   const [showFeedback, setShowFeedback] = useState(false);
+  const haptics = useHaptics();
 
   const cardOpacity    = useRef(new Animated.Value(0)).current;
   const cardTranslateY = useRef(new Animated.Value(30)).current;
@@ -174,28 +183,33 @@ export default function ActionScreen() {
   }, [currentAction]);
 
   const handleComplete = () => {
+    haptics.success();
     completeAction();
     setShowFeedback(true);
   };
 
   const handleSkip = () => {
+    haptics.light();
     skipAction();
     fetchAction();
   };
 
   const handleNext = () => {
+    haptics.medium();
     setShowFeedback(false);
     fetchAction();
   };
 
   const handleHome = () => {
+    haptics.light();
     setShowFeedback(false);
     navigation.navigate('Home');
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0d0d0d" />
+    <GradientBackground variant="action">
+    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
       {/* ヘッダー */}
       {!showFeedback && (
@@ -225,8 +239,15 @@ export default function ActionScreen() {
           {/* アクションカード */}
           <Animated.View style={[styles.actionCard, { borderColor: pc.color + '55', backgroundColor: pc.bgColor },
             { opacity: cardOpacity, transform: [{ translateY: cardTranslateY }] }]}>
-            <View style={[styles.durationBadge, { backgroundColor: pc.color + '22', borderColor: pc.color + '55' }]}>
-              <Text style={[styles.durationText, { color: pc.color }]}>⏱ {currentAction.duration}</Text>
+            <View style={styles.badgeRow}>
+              <View style={[styles.durationBadge, { backgroundColor: pc.color + '22', borderColor: pc.color + '55' }]}>
+                <Text style={[styles.durationText, { color: pc.color }]}>⏱ {currentAction.duration}</Text>
+              </View>
+              <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor(currentAction.difficulty) + '22', borderColor: getDifficultyColor(currentAction.difficulty) + '55' }]}>
+                <Text style={[styles.durationText, { color: getDifficultyColor(currentAction.difficulty) }]}>
+                  {t(`action.difficulty.${currentAction.difficulty}`)}
+                </Text>
+              </View>
             </View>
             <Text style={styles.actionTitle}>{currentAction.title}</Text>
             <Text style={styles.actionDescription}>{currentAction.description}</Text>
@@ -259,6 +280,7 @@ export default function ActionScreen() {
         </ScrollView>
       ) : null}
     </SafeAreaView>
+    </GradientBackground>
   );
 }
 
@@ -279,6 +301,8 @@ const styles = StyleSheet.create({
 
   /* 結果カード */
   resultContainer: { paddingHorizontal: 22, paddingBottom: 32, gap: 18 },
+  badgeRow: { flexDirection: 'row', gap: 8 },
+  difficultyBadge: { alignSelf: 'flex-start', borderWidth: 1, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5 },
   offlineBadge: { alignSelf: 'flex-start', backgroundColor: '#222', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
   offlineBadgeText: { color: '#666', fontSize: 12, fontWeight: '600' },
   actionCard: { borderWidth: 1, borderRadius: 20, padding: 24, gap: 14 },

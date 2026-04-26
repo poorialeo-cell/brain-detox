@@ -1,67 +1,38 @@
 import { NavigationContainer } from '@react-navigation/native';
-import { navigationRef } from './navigationRef';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { RootStackParamList, MainTabParamList } from '../types';
 import { useAppStore } from '../store/useAppStore';
+import { navigationRef } from './navigationRef';
+import TabBar from '../components/TabBar';
 
 import QuizScreen from '../screens/QuizScreen';
 import PartnerScreen from '../screens/PartnerScreen';
+import BrainRotTestScreen from '../screens/BrainRotTestScreen';
 import HomeScreen from '../screens/HomeScreen';
 import ActionScreen from '../screens/ActionScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
-const Tab = createBottomTabNavigator<MainTabParamList>();
+const Tab   = createBottomTabNavigator<MainTabParamList>();
 
 function MainTabs() {
   const { t } = useTranslation();
   return (
     <Tab.Navigator
+      tabBar={(props) => <TabBar {...props} />}
       screenOptions={{
-        tabBarStyle: { backgroundColor: '#111', borderTopColor: '#222', height: 60 },
-        tabBarActiveTintColor: '#a78bfa',
-        tabBarInactiveTintColor: '#444',
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600', marginBottom: 4 },
         headerShown: false,
+        sceneStyle: { backgroundColor: 'transparent' },
       }}
     >
-      <Tab.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{
-          tabBarLabel: t('nav.home'),
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>🧠</Text>,
-        }}
-      />
-      <Tab.Screen
-        name="Action"
-        component={ActionScreen}
-        options={{
-          tabBarLabel: t('nav.action'),
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>⚡</Text>,
-        }}
-      />
-      <Tab.Screen
-        name="History"
-        component={HistoryScreen}
-        options={{
-          tabBarLabel: t('nav.history'),
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>📊</Text>,
-        }}
-      />
-      <Tab.Screen
-        name="Settings"
-        component={SettingsScreen}
-        options={{
-          tabBarLabel: t('nav.settings'),
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>⚙️</Text>,
-        }}
-      />
+      <Tab.Screen name="Home"     component={HomeScreen}     options={{ tabBarLabel: t('nav.home') }} />
+      <Tab.Screen name="Action"   component={ActionScreen}   options={{ tabBarLabel: t('nav.action') }} />
+      <Tab.Screen name="History"  component={HistoryScreen}  options={{ tabBarLabel: t('nav.history') }} />
+      <Tab.Screen name="Settings" component={SettingsScreen} options={{ tabBarLabel: t('nav.settings') }} />
     </Tab.Navigator>
   );
 }
@@ -74,11 +45,14 @@ export default function AppNavigator() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isOnboardingComplete ? (
           <>
-            <Stack.Screen name="Quiz" component={QuizScreen} />
-            <Stack.Screen name="PartnerResult" component={PartnerScreen} />
+            <Stack.Screen name="Quiz"         component={QuizScreen}         options={{ animation: 'fade' }} />
+            <Stack.Screen name="PartnerResult" component={PartnerScreen}      options={{ animation: 'slide_from_bottom' }} />
           </>
         ) : (
-          <Stack.Screen name="Main" component={MainTabs} />
+          <>
+            <Stack.Screen name="Main"          component={MainTabs}           options={{ animation: 'fade' }} />
+            <Stack.Screen name="BrainRotTest"  component={BrainRotTestScreen} options={{ animation: 'slide_from_bottom', presentation: 'modal' }} />
+          </>
         )}
       </Stack.Navigator>
     </NavigationContainer>

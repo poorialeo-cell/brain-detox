@@ -1,4 +1,5 @@
 import { PartnerType, Language, ActionSuggestion } from '../types';
+import { ActionDifficulty } from '../config/scoringConfig';
 
 // ─── システムプロンプト（パートナー × 言語） ──────────────────────────
 const SYSTEM_PROMPTS: Record<PartnerType, Record<Language, string>> = {
@@ -64,62 +65,62 @@ Constraint: Suggest exactly ONE physical or energy-releasing action. Keep the en
 const FALLBACK_ACTIONS: Record<PartnerType, Record<Language, ActionSuggestion[]>> = {
   teacher: {
     ja: [
-      { title: '即席スクワット', description: '今すぐ椅子から立ち、20回スクワットをしろ。身体を動かせば脳が覚醒する。休んでいる時間はない。', duration: '2分', partnerMessage: '言い訳は聞かない。今すぐやれ。', isOffline: true },
-      { title: '冷水洗顔', description: '洗面所へ行き、冷水で顔を3回洗え。前頭前野を物理的に刺激する最速の方法だ。', duration: '1分', partnerMessage: '逃げるな。身体に喝を入れろ。', isOffline: true },
-      { title: '5分読書', description: '本を1冊手に取り、5分間だけ読め。それだけでいい。集中力の筋肉を今すぐ鍛えろ。', duration: '5分', partnerMessage: 'ショート動画の代わりに活字を入れろ。', isOffline: true },
+      { title: '即席スクワット', description: '今すぐ椅子から立ち、20回スクワットをしろ。身体を動かせば脳が覚醒する。休んでいる時間はない。', duration: '2分', difficulty: 'easy' as ActionDifficulty, partnerMessage: '言い訳は聞かない。今すぐやれ。', isOffline: true },
+      { title: '冷水洗顔', description: '洗面所へ行き、冷水で顔を3回洗え。前頭前野を物理的に刺激する最速の方法だ。', duration: '1分', difficulty: 'easy' as ActionDifficulty, partnerMessage: '逃げるな。身体に喝を入れろ。', isOffline: true },
+      { title: '5分読書', description: '本を1冊手に取り、5分間だけ読め。それだけでいい。集中力の筋肉を今すぐ鍛えろ。', duration: '5分', difficulty: 'medium' as ActionDifficulty, partnerMessage: 'ショート動画の代わりに活字を入れろ。', isOffline: true },
     ],
     en: [
-      { title: 'Drop & Squat', description: 'Stand up right now and do 20 squats. Physical movement activates your brain. No excuses.', duration: '2 min', partnerMessage: "No excuses. Do it now.", isOffline: true },
-      { title: 'Cold Water Face Wash', description: 'Go to the sink and wash your face with cold water 3 times. Fastest way to stimulate your prefrontal cortex.', duration: '1 min', partnerMessage: "Don't run. Wake your body up.", isOffline: true },
-      { title: '5-Min Reading', description: 'Pick up a book and read for just 5 minutes. Train your concentration muscle right now.', duration: '5 min', partnerMessage: 'Replace short videos with words.', isOffline: true },
+      { title: 'Drop & Squat', description: 'Stand up right now and do 20 squats. Physical movement activates your brain. No excuses.', duration: '2 min', difficulty: 'easy' as ActionDifficulty, partnerMessage: "No excuses. Do it now.", isOffline: true },
+      { title: 'Cold Water Face Wash', description: 'Go to the sink and wash your face with cold water 3 times. Fastest way to stimulate your prefrontal cortex.', duration: '1 min', difficulty: 'easy' as ActionDifficulty, partnerMessage: "Don't run. Wake your body up.", isOffline: true },
+      { title: '5-Min Reading', description: 'Pick up a book and read for just 5 minutes. Train your concentration muscle right now.', duration: '5 min', difficulty: 'medium' as ActionDifficulty, partnerMessage: 'Replace short videos with words.', isOffline: true },
     ],
     th: [
-      { title: 'สควอท 20 ครั้ง', description: 'ลุกขึ้นยืนทันทีแล้วทำสควอท 20 ครั้ง การเคลื่อนไหวร่างกายกระตุ้นสมอง ไม่มีข้อแก้ตัว', duration: '2 นาที', partnerMessage: 'ไม่มีข้อแก้ตัว ทำเดี๋ยวนี้', isOffline: true },
+      { title: 'สควอท 20 ครั้ง', description: 'ลุกขึ้นยืนทันทีแล้วทำสควอท 20 ครั้ง', duration: '2 นาที', difficulty: 'easy' as ActionDifficulty, partnerMessage: 'ไม่มีข้อแก้ตัว ทำเดี๋ยวนี้', isOffline: true },
     ],
   },
   counselor: {
     ja: [
-      { title: '4-8呼吸法', description: '目を閉じて、鼻から4秒吸って8秒かけて吐く。これを5回繰り返してみよう。ゆっくりでいい。', duration: '3分', partnerMessage: '焦らなくていい。まず息を整えよう。', isOffline: true },
-      { title: '一行日記', description: '今日感じたことを一行だけ書いてみよう。「疲れた」でも「楽しかった」でもいい。自分を知る第一歩。', duration: '3分', partnerMessage: '小さな一歩でいい。あなたのペースで。', isOffline: true },
-      { title: '温かい飲み物タイム', description: '温かいお茶やコーヒーをゆっくり淹れて飲もう。五感に意識を向けると脳がリセットされるよ。', duration: '5分', partnerMessage: '自分を大切にすることも立派な回復だよ。', isOffline: true },
+      { title: '4-8呼吸法', description: '目を閉じて、鼻から4秒吸って8秒かけて吐く。これを5回繰り返してみよう。ゆっくりでいい。', duration: '3分', difficulty: 'easy' as ActionDifficulty, partnerMessage: '焦らなくていい。まず息を整えよう。', isOffline: true },
+      { title: '一行日記', description: '今日感じたことを一行だけ書いてみよう。「疲れた」でも「楽しかった」でもいい。自分を知る第一歩。', duration: '3分', difficulty: 'easy' as ActionDifficulty, partnerMessage: '小さな一歩でいい。あなたのペースで。', isOffline: true },
+      { title: '温かい飲み物タイム', description: '温かいお茶やコーヒーをゆっくり淹れて飲もう。五感に意識を向けると脳がリセットされるよ。', duration: '5分', difficulty: 'medium' as ActionDifficulty, partnerMessage: '自分を大切にすることも立派な回復だよ。', isOffline: true },
     ],
     en: [
-      { title: '4-8 Breathing', description: "Close your eyes and breathe in for 4 seconds, out for 8. Try it 5 times. It's okay to go slow.", duration: '3 min', partnerMessage: "No rush. Let's calm your breathing first.", isOffline: true },
-      { title: 'One-Line Journal', description: "Write just one line about how you're feeling today. 'Tired' or 'happy' — both are fine. It's a first step.", duration: '3 min', partnerMessage: "One small step is enough. At your own pace.", isOffline: true },
-      { title: 'Warm Drink Moment', description: 'Make a warm tea or coffee and drink it slowly. Focusing on your senses resets the brain.', duration: '5 min', partnerMessage: 'Taking care of yourself is real recovery too.', isOffline: true },
+      { title: '4-8 Breathing', description: "Close your eyes and breathe in for 4 seconds, out for 8. Try it 5 times.", duration: '3 min', difficulty: 'easy' as ActionDifficulty, partnerMessage: "No rush. Let's calm your breathing first.", isOffline: true },
+      { title: 'One-Line Journal', description: "Write just one line about how you're feeling today.", duration: '3 min', difficulty: 'easy' as ActionDifficulty, partnerMessage: "One small step is enough. At your own pace.", isOffline: true },
+      { title: 'Warm Drink Moment', description: 'Make a warm tea or coffee and drink it slowly.', duration: '5 min', difficulty: 'medium' as ActionDifficulty, partnerMessage: 'Taking care of yourself is real recovery too.', isOffline: true },
     ],
     th: [
-      { title: 'หายใจ 4-8', description: 'หลับตาแล้วหายใจเข้า 4 วินาที ออก 8 วินาที ทำ 5 ครั้ง ค่อยๆ ทำได้เลย', duration: '3 นาที', partnerMessage: 'ไม่ต้องรีบ มาจัดการลมหายใจก่อนนะ', isOffline: true },
+      { title: 'หายใจ 4-8', description: 'หลับตาแล้วหายใจเข้า 4 วินาที ออก 8 วินาที ทำ 5 ครั้ง', duration: '3 นาที', difficulty: 'easy' as ActionDifficulty, partnerMessage: 'ไม่ต้องรีบ มาจัดการลมหายใจก่อนนะ', isOffline: true },
     ],
   },
   scientist: {
     ja: [
-      { title: '20-20-20ルール', description: 'スクリーンから目を離し、6m先を20秒間見よ。視覚野の疲労を軽減し、注意力が回復する（米眼科学会推奨）。', duration: '1分', partnerMessage: '神経科学的に証明された手法だ。実行せよ。', isOffline: true },
-      { title: '10分ウォーキング', description: '10分間の早歩きを実施せよ。有酸素運動はBDNF（脳由来神経栄養因子）を増加させ、依存の衝動を抑制する。', duration: '10分', partnerMessage: 'データは明確だ。運動がドーパミン系を整える。', isOffline: true },
-      { title: '5感マインドフルネス', description: '周囲の音を5つ特定し、各々に3秒意識を向けよ。デフォルトモードネットワークをリセットする効果がある。', duration: '3分', partnerMessage: '前頭前野の活性化を促す。今すぐ実行。', isOffline: true },
+      { title: '20-20-20ルール', description: 'スクリーンから目を離し、6m先を20秒間見よ。視覚野の疲労を軽減し、注意力が回復する（米眼科学会推奨）。', duration: '1分', difficulty: 'easy' as ActionDifficulty, partnerMessage: '神経科学的に証明された手法だ。実行せよ。', isOffline: true },
+      { title: '10分ウォーキング', description: '10分間の早歩きを実施せよ。有酸素運動はBDNF（脳由来神経栄養因子）を増加させ、依存の衝動を抑制する。', duration: '10分', difficulty: 'hard' as ActionDifficulty, partnerMessage: 'データは明確だ。運動がドーパミン系を整える。', isOffline: true },
+      { title: '5感マインドフルネス', description: '周囲の音を5つ特定し、各々に3秒意識を向けよ。デフォルトモードネットワークをリセットする効果がある。', duration: '3分', difficulty: 'medium' as ActionDifficulty, partnerMessage: '前頭前野の活性化を促す。今すぐ実行。', isOffline: true },
     ],
     en: [
-      { title: '20-20-20 Rule', description: 'Look away from screens at something 20 feet away for 20 seconds. Reduces visual cortex fatigue and restores attention (AAO-recommended).', duration: '1 min', partnerMessage: 'Scientifically validated. Execute it.', isOffline: true },
-      { title: '10-Min Walk', description: 'Walk briskly for 10 minutes. Aerobic exercise increases BDNF (brain-derived neurotrophic factor) and suppresses addictive impulses.', duration: '10 min', partnerMessage: 'The data is clear. Exercise regulates dopamine.', isOffline: true },
-      { title: '5-Sense Mindfulness', description: 'Identify 5 sounds around you and focus on each for 3 seconds. This resets the default mode network.', duration: '3 min', partnerMessage: 'Activates prefrontal cortex. Do it now.', isOffline: true },
+      { title: '20-20-20 Rule', description: 'Look away from screens at something 20 feet away for 20 seconds.', duration: '1 min', difficulty: 'easy' as ActionDifficulty, partnerMessage: 'Scientifically validated. Execute it.', isOffline: true },
+      { title: '10-Min Walk', description: 'Walk briskly for 10 minutes. Aerobic exercise increases BDNF and suppresses addictive impulses.', duration: '10 min', difficulty: 'hard' as ActionDifficulty, partnerMessage: 'The data is clear. Exercise regulates dopamine.', isOffline: true },
+      { title: '5-Sense Mindfulness', description: 'Identify 5 sounds around you and focus on each for 3 seconds.', duration: '3 min', difficulty: 'medium' as ActionDifficulty, partnerMessage: 'Activates prefrontal cortex. Do it now.', isOffline: true },
     ],
     th: [
-      { title: 'กฎ 20-20-20', description: 'มองออกไป 6 เมตร เป็นเวลา 20 วินาที ลดความเมื่อยล้าของคอร์เทกซ์การมองเห็นและฟื้นความสนใจ', duration: '1 นาที', partnerMessage: 'มีการพิสูจน์ทางวิทยาศาสตร์แล้ว ปฏิบัติได้เลย', isOffline: true },
+      { title: 'กฎ 20-20-20', description: 'มองออกไป 6 เมตร เป็นเวลา 20 วินาที', duration: '1 นาที', difficulty: 'easy' as ActionDifficulty, partnerMessage: 'มีการพิสูจน์ทางวิทยาศาสตร์แล้ว ปฏิบัติได้เลย', isOffline: true },
     ],
   },
   trainer: {
     ja: [
-      { title: 'バーピー10回', description: '今すぐバーピー10回！腕立て伏せ→立ち上がり→ジャンプ。心拍数を一気に上げてドーパミンを叩き出せ！', duration: '2分', partnerMessage: 'よっしゃ！一緒に燃えよう！やれるぞ！', isOffline: true },
-      { title: '外に飛び出せ', description: '靴を履いて外に出ろ！5分間でいい。太陽光でセロトニンをチャージだ！スマホは部屋に置いていけ！', duration: '5分', partnerMessage: '動いた分だけ脳が輝く！行ってこい！', isOffline: true },
-      { title: 'シャドーボクシング', description: '立ち上がってシャドーボクシング1分間！全力でパンチを打て！フラストレーションを全部燃やし尽くせ！', duration: '1分', partnerMessage: '感情を全部エネルギーに変えろ！燃えてこい！', isOffline: true },
+      { title: 'バーピー10回', description: '今すぐバーピー10回！腕立て伏せ→立ち上がり→ジャンプ。心拍数を一気に上げてドーパミンを叩き出せ！', duration: '2分', difficulty: 'medium' as ActionDifficulty, partnerMessage: 'よっしゃ！一緒に燃えよう！やれるぞ！', isOffline: true },
+      { title: '外に飛び出せ', description: '靴を履いて外に出ろ！5分間でいい。太陽光でセロトニンをチャージだ！スマホは部屋に置いていけ！', duration: '5分', difficulty: 'medium' as ActionDifficulty, partnerMessage: '動いた分だけ脳が輝く！行ってこい！', isOffline: true },
+      { title: 'シャドーボクシング', description: '立ち上がってシャドーボクシング1分間！全力でパンチを打て！フラストレーションを全部燃やし尽くせ！', duration: '1分', difficulty: 'easy' as ActionDifficulty, partnerMessage: '感情を全部エネルギーに変えろ！燃えてこい！', isOffline: true },
     ],
     en: [
-      { title: '10 Burpees NOW', description: "10 burpees right now! Push-up → stand → jump. Spike your heart rate and blast out that dopamine!", duration: '2 min', partnerMessage: "Let's go! Burn together! You got this!", isOffline: true },
-      { title: 'Get Outside', description: 'Put on your shoes and get outside for 5 minutes! Charge up your serotonin with sunlight! Leave the phone behind!', duration: '5 min', partnerMessage: 'Every step makes your brain shine! GO!', isOffline: true },
-      { title: 'Shadow Boxing', description: 'Stand up and shadow box for 1 minute! Full power punches! Burn every last bit of frustration!', duration: '1 min', partnerMessage: 'Turn all that emotion into fuel! BURN!', isOffline: true },
+      { title: '10 Burpees NOW', description: "10 burpees right now! Push-up → stand → jump. Spike your heart rate!", duration: '2 min', difficulty: 'medium' as ActionDifficulty, partnerMessage: "Let's go! Burn together! You got this!", isOffline: true },
+      { title: 'Get Outside', description: 'Put on your shoes and get outside for 5 minutes! Charge up your serotonin!', duration: '5 min', difficulty: 'medium' as ActionDifficulty, partnerMessage: 'Every step makes your brain shine! GO!', isOffline: true },
+      { title: 'Shadow Boxing', description: 'Stand up and shadow box for 1 minute! Full power punches!', duration: '1 min', difficulty: 'easy' as ActionDifficulty, partnerMessage: 'Turn all that emotion into fuel! BURN!', isOffline: true },
     ],
     th: [
-      { title: 'เบอร์พี 10 ครั้ง', description: 'เบอร์พี 10 ครั้งเดี๋ยวนี้! วิดพื้น → ยืน → กระโดด เพิ่มอัตราการเต้นของหัวใจและปล่อยโดพามีนออกมา!', duration: '2 นาที', partnerMessage: 'ไปเลย! เผาผลาญด้วยกัน! คุณทำได้!', isOffline: true },
+      { title: 'เบอร์พี 10 ครั้ง', description: 'เบอร์พี 10 ครั้งเดี๋ยวนี้!', duration: '2 นาที', difficulty: 'medium' as ActionDifficulty, partnerMessage: 'ไปเลย! เผาผลาญด้วยกัน! คุณทำได้!', isOffline: true },
     ],
   },
 };
@@ -177,9 +178,13 @@ export async function generateAction(params: GenerateActionParams): Promise<Acti
 
   const parsed = JSON.parse(content);
 
+  const difficulty: ActionDifficulty =
+    ['easy', 'medium', 'hard'].includes(parsed.difficulty) ? parsed.difficulty : 'medium';
+
   return {
     title: parsed.title ?? '回復アクション',
     description: parsed.description ?? '',
+    difficulty,
     duration: parsed.duration ?? '5分',
     partnerMessage: parsed.partnerMessage ?? '',
     isOffline: false,
@@ -203,6 +208,7 @@ function buildUserMessage({ brainScore, language }: GenerateActionParams): strin
   "title": "アクションのタイトル（15文字以内）",
   "description": "具体的な手順（60〜120文字）",
   "duration": "所要時間（例: 2分、5分、10分）",
+  "difficulty": "easy または medium または hard",
   "partnerMessage": "パートナーらしい一言（20〜40文字）"
 }`;
 }

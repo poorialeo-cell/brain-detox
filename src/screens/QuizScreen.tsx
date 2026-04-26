@@ -14,6 +14,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useI18n } from '../hooks/useI18n';
 import { useAppStore } from '../store/useAppStore';
 import { PartnerType, RootStackParamList } from '../types';
+import { useHaptics } from '../hooks/useHaptics';
+import GradientBackground from '../components/GradientBackground';
 
 const { width } = Dimensions.get('window');
 
@@ -40,6 +42,7 @@ function calculateBrainScore(answers: number[]): number {
 
 export default function QuizScreen({ navigation }: Props) {
   const { t } = useI18n();
+  const haptics = useHaptics();
   const { setSelectedPartner, setBrainScore } = useAppStore();
 
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -75,6 +78,7 @@ export default function QuizScreen({ navigation }: Props) {
   const handleAnswer = useCallback(
     (answerIndex: number) => {
       if (isAnimating) return;
+      haptics.light();
       setIsAnimating(true);
       const newAnswers = [...answers, answerIndex];
       setAnswers(newAnswers);
@@ -95,8 +99,9 @@ export default function QuizScreen({ navigation }: Props) {
   const progress = (currentIndex + 1) / TOTAL_QUESTIONS;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0d0d0d" />
+    <GradientBackground variant="quiz">
+    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
       {/* ヘッダー */}
       <View style={styles.header}>
@@ -139,6 +144,7 @@ export default function QuizScreen({ navigation }: Props) {
         </View>
       </Animated.View>
     </SafeAreaView>
+    </GradientBackground>
   );
 }
 

@@ -7,6 +7,7 @@ import { waitForHydration, useAppStore } from './src/store/useAppStore';
 import { navigateTo } from './src/navigation/navigationRef';
 import type { NotificationScreen } from './src/services/notificationService';
 import { signInAnon } from './src/services/authService';
+import { isDueForTest } from './src/services/scoringService';
 
 export default function App() {
   const [isReady, setIsReady] = useState(false);
@@ -16,17 +17,30 @@ export default function App() {
       // 1. ストアのハイドレーション待ち
       await waitForHydration();
 
-      // 2. Firebase 匿名認証（既存ユーザーは自動ログイン）
-      const { userId, setUserId, syncProfile } = useAppStore.getState();
-      if (!userId) {
+      const store = useAppStore.getState();
+
+      // 2. スコアの自然減衰を適用
+      if (store.isOnboardingComplete) {
+        store.applyDecay();
+      }
+
+      // 3. Firebase 匿名認証
+      if (!store.userId) {
         const newId = await signInAnon();
         if (newId) {
-          setUserId(newId);
-          await syncProfile();
+          store.setUserId(newId);
+          await store.syncProfile();
         }
       }
 
       setIsReady(true);
+
+      // 4. ブレインロットテストが必要なら3秒後にモーダル表示
+      if (store.isOnboardingComplete && isDueForTest(store.lastTestDate)) {
+        setTimeout(() => {
+          navigateTo('BrainRotTest');
+        }, 3000);
+      }
     };
 
     init();

@@ -106,37 +106,36 @@ export default function HistoryScreen() {
             {chartData && (
               <View style={styles.chartCard}>
                 <Text style={styles.sectionLabel}>{t('history.chartLabel')}</Text>
-                <LineChart
-                  data={{
-                    labels: chartData.labels,
-                    datasets: [
-                      {
-                        data: chartData.scores,
-                        color: () => accentColor,
-                        strokeWidth: 2,
-                      },
-                      // 上限・下限の補助線（グラフのスケール固定）
-                      { data: [0], withDots: false },
-                      { data: [100], withDots: false },
-                    ],
-                  }}
-                  width={SCREEN_WIDTH - 44}
-                  height={200}
-                  chartConfig={{
-                    backgroundColor: '#161616',
-                    backgroundGradientFrom: '#161616',
-                    backgroundGradientTo: '#1a1a1a',
-                    decimalPlaces: 0,
-                    color: () => accentColor,
-                    labelColor: () => '#555',
-                    propsForDots: { r: '5', strokeWidth: '2', stroke: accentColor },
-                    propsForBackgroundLines: { stroke: '#222' },
-                  }}
-                  bezier
-                  withVerticalLines={false}
-                  style={styles.chart}
-                  fromZero={false}
-                />
+                {/* overflow:hidden でチャートのはみ出しをクリップ */}
+                <View style={styles.chartClip}>
+                  <LineChart
+                    data={{
+                      labels: chartData.labels,
+                      datasets: [
+                        {
+                          data: chartData.scores,
+                          color: () => accentColor,
+                          strokeWidth: 2,
+                        },
+                      ],
+                    }}
+                    width={SCREEN_WIDTH - 80}
+                    height={200}
+                    chartConfig={{
+                      backgroundColor: '#161616',
+                      backgroundGradientFrom: '#161616',
+                      backgroundGradientTo: '#161616',
+                      decimalPlaces: 0,
+                      color: () => accentColor,
+                      labelColor: () => '#555',
+                      propsForDots: { r: '5', strokeWidth: '2', stroke: accentColor },
+                      propsForBackgroundLines: { stroke: '#2a2a2a' },
+                    }}
+                    bezier
+                    withVerticalLines={false}
+                    style={{ borderRadius: 8 }}
+                  />
+                </View>
               </View>
             )}
 
@@ -190,7 +189,7 @@ function HistoryRow({ entry, t }: { entry: ScoreEntry; t: (k: string) => string 
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0d0d0d' },
-  scroll: { paddingHorizontal: 22, paddingBottom: 40 },
+  scroll: { paddingHorizontal: 22, paddingBottom: 110 },
 
   pageTitle: {
     fontSize: 28, fontWeight: '900', color: '#fff',
@@ -222,7 +221,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#161616', borderWidth: 1, borderColor: '#2a2a2a',
     borderRadius: 16, padding: 16, marginBottom: 24,
   },
-  chart: { borderRadius: 12, marginTop: 8 },
+  chartClip: {
+    overflow: 'hidden',
+    borderRadius: 8,
+    marginTop: 8,
+  },
 
   sectionLabel: {
     fontSize: 11, fontWeight: '700', color: '#555',
