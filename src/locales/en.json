@@ -7,9 +7,20 @@
   },
   "badges": {
     "sectionTitle": "Achievements",
+    "tabBadges": "Badges",
+    "tabHistory": "History",
     "locked": "Locked",
     "earnedOn": "Earned {{date}}",
-    "newBadge": "New Achievement!",
+    "newBadge": "Achievement Unlocked!",
+    "condition": "How to earn",
+    "notYetEarned": "Not yet earned",
+    "close": "Close",
+    "badgePraise": {
+      "teacher": "You delivered results. That's real strength.",
+      "counselor": "You worked so hard. I'm truly proud of you.",
+      "scientist": "The data confirms it. The effects of consistency are real.",
+      "trainer": "AMAZING! Keep that momentum going all the way!!"
+    },
     "first_action":  { "name": "First Step",        "description": "Completed your first action" },
     "streak_3":      { "name": "3-Day Habit",        "description": "Completed actions 3 days in a row" },
     "streak_7":      { "name": "Week Warrior",       "description": "Completed actions 7 days in a row" },

@@ -7,9 +7,20 @@
   },
   "badges": {
     "sectionTitle": "実績バッジ",
+    "tabBadges": "実績",
+    "tabHistory": "履歴",
     "locked": "未獲得",
     "earnedOn": "{{date}} 獲得",
-    "newBadge": "新しい実績！",
+    "newBadge": "実績バッジ獲得！",
+    "condition": "獲得条件",
+    "notYetEarned": "まだ獲得していません",
+    "close": "閉じる",
+    "badgePraise": {
+      "teacher": "結果を出したな。これが本物の実力だ。",
+      "counselor": "本当によく頑張ったね。心から誇りに思うよ。",
+      "scientist": "データが証明した。継続の効果は確実に現れている。",
+      "trainer": "最高だ！その勢いでどこまでも突き進め！！"
+    },
     "first_action":  { "name": "初めの一歩",    "description": "最初のアクションを完了した" },
     "streak_3":      { "name": "3日坊主卒業",    "description": "3日連続でアクションを達成" },
     "streak_7":      { "name": "1週間の戦士",    "description": "7日連続でアクションを達成" },

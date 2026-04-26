@@ -1,12 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, SafeAreaView,
-  StatusBar, ScrollView, Dimensions, TouchableOpacity,
+  StatusBar, ScrollView, Dimensions, TouchableOpacity, Animated,
 } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { useI18n } from '../hooks/useI18n';
 import { useAppStore } from '../store/useAppStore';
 import { PartnerType, ScoreEntry, Badge } from '../types';
+import BadgeDetailModal from '../components/BadgeDetailModal';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -34,14 +35,18 @@ function getScoreColor(score: number): string {
 }
 
 // ── バッジカード ─────────────────────────────────────────────────────
-function BadgeCard({ badge, t }: { badge: Badge; t: (k: string) => string }) {
+function BadgeCard({ badge, t, onPress }: { badge: Badge; t: (k: string) => string; onPress: () => void }) {
   const earned = !!badge.earnedAt;
   const dateStr = badge.earnedAt
     ? new Date(badge.earnedAt).toLocaleDateString()
     : null;
 
   return (
-    <View style={[styles.badgeCard, earned ? { borderColor: badge.color + '55' } : styles.badgeCardLocked]}>
+    <TouchableOpacity
+      style={[styles.badgeCard, earned ? { borderColor: badge.color + '55' } : styles.badgeCardLocked]}
+      onPress={onPress}
+      activeOpacity={0.75}
+    >
       <Text style={[styles.badgeEmoji, !earned && styles.badgeEmojiLocked]}>{badge.emoji}</Text>
       <Text style={[styles.badgeName, earned ? { color: badge.color } : styles.badgeTextLocked]} numberOfLines={1}>
         {t(badge.nameKey)}
@@ -49,13 +54,26 @@ function BadgeCard({ badge, t }: { badge: Badge; t: (k: string) => string }) {
       <Text style={styles.badgeDate} numberOfLines={1}>
         {earned && dateStr ? t('badges.earnedOn').replace('{{date}}', dateStr) : t('badges.locked')}
       </Text>
-    </View>
+    </TouchableOpacity>
   );
 }
 
 export default function HistoryScreen() {
   const { t } = useI18n();
   const { scoreHistory, selectedPartner, brainScore, badges } = useAppStore();
+
+  const [activeTab, setActiveTab] = useState<'history' | 'badges'>('history');
+  const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
+  const tabAnim = useRef(new Animated.Value(0)).current;
+
+  const switchTab = (tab: 'history' | 'badges') => {
+    setActiveTab(tab);
+    Animated.timing(tabAnim, {
+      toValue: tab === 'history' ? 0 : 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  };
 
   const partner = selectedPartner ?? 'counselor';
   const accentColor = PARTNER_COLOR[partner];
@@ -92,24 +110,44 @@ export default function HistoryScreen() {
     [scoreHistory]
   );
 
+  const TAB_WIDTH = (SCREEN_WIDTH - 44) / 2;
+  const underlineX = tabAnim.interpolate({ inputRange: [0, 1], outputRange: [0, TAB_WIDTH] });
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0d0d0d" />
+
+      {/* ヘッダー */}
+      <Text style={styles.pageTitle}>{t('history.title')}</Text>
+
+      {/* 内部タブバー */}
+      <View style={styles.tabBar}>
+        <TouchableOpacity style={styles.tabItem} onPress={() => switchTab('history')} activeOpacity={0.7}>
+          <Text style={[styles.tabLabel, activeTab === 'history' && styles.tabLabelActive]}>
+            {t('badges.tabHistory')}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.tabItem} onPress={() => switchTab('badges')} activeOpacity={0.7}>
+          <Text style={[styles.tabLabel, activeTab === 'badges' && styles.tabLabelActive]}>
+            {t('badges.tabBadges')}
+          </Text>
+        </TouchableOpacity>
+        <Animated.View style={[styles.tabUnderline, { transform: [{ translateX: underlineX }], width: TAB_WIDTH }]} />
+      </View>
+
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
-        {/* ヘッダー */}
-        <Text style={styles.pageTitle}>{t('history.title')}</Text>
+        {/* ── バッジタブ ── */}
+        {activeTab === 'badges' && (
+          <View style={styles.badgeGrid}>
+            {badges.map((badge) => (
+              <BadgeCard key={badge.id} badge={badge} t={t} onPress={() => setSelectedBadge(badge)} />
+            ))}
+          </View>
+        )}
 
-        {/* ── バッジギャラリー ── */}
-        <Text style={styles.sectionLabel}>{t('badges.sectionTitle')}</Text>
-        <View style={styles.badgeGrid}>
-          {badges.map((badge) => (
-            <BadgeCard key={badge.id} badge={badge} t={t} />
-          ))}
-        </View>
-
-        {scoreHistory.length === 0 ? (
-          /* データなし */
+        {/* ── 履歴タブ ── */}
+        {activeTab === 'history' && (scoreHistory.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyEmoji}>📊</Text>
             <Text style={styles.emptyText}>{t('history.noData')}</Text>
@@ -173,8 +211,12 @@ export default function HistoryScreen() {
               ))}
             </View>
           </>
-        )}
+        ))}
+
       </ScrollView>
+
+      {/* バッジ詳細モーダル */}
+      <BadgeDetailModal badge={selectedBadge} onClose={() => setSelectedBadge(null)} />
     </SafeAreaView>
   );
 }
@@ -216,7 +258,35 @@ const styles = StyleSheet.create({
 
   pageTitle: {
     fontSize: 28, fontWeight: '900', color: '#fff',
-    paddingTop: 16, marginBottom: 24,
+    paddingTop: 16, marginBottom: 12, paddingHorizontal: 22,
+  },
+
+  /* 内部タブバー */
+  tabBar: {
+    flexDirection: 'row',
+    marginHorizontal: 22,
+    marginBottom: 20,
+    backgroundColor: '#161616',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  tabItem: {
+    flex: 1, paddingVertical: 12, alignItems: 'center',
+  },
+  tabLabel: {
+    fontSize: 13, fontWeight: '700', color: '#555',
+  },
+  tabLabelActive: {
+    color: '#a78bfa',
+  },
+  tabUnderline: {
+    position: 'absolute',
+    bottom: 0, height: 2,
+    backgroundColor: '#a78bfa',
+    borderRadius: 1,
   },
 
   badgeGrid: {
