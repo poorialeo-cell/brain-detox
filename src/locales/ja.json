@@ -5,6 +5,30 @@
     "loading": "読み込み中...",
     "error": "エラーが発生しました"
   },
+  "badges": {
+    "sectionTitle": "実績バッジ",
+    "locked": "未獲得",
+    "earnedOn": "{{date}} 獲得",
+    "newBadge": "新しい実績！",
+    "first_action":  { "name": "初めの一歩",    "description": "最初のアクションを完了した" },
+    "streak_3":      { "name": "3日坊主卒業",    "description": "3日連続でアクションを達成" },
+    "streak_7":      { "name": "1週間の戦士",    "description": "7日連続でアクションを達成" },
+    "streak_14":     { "name": "2週間の覚者",    "description": "14日連続でアクションを達成" },
+    "streak_30":     { "name": "不屈の月",       "description": "30日連続でアクションを達成" },
+    "xp_100":        { "name": "脳の庭師",       "description": "累計XPが100に到達" },
+    "xp_500":        { "name": "脳の求道者",     "description": "累計XPが500に到達" },
+    "xp_1000":       { "name": "神聖なる脳",     "description": "累計XPが1000に到達" },
+    "recovery_3":    { "name": "不屈の精神",     "description": "低スコアから3回回復した" },
+    "level_5":       { "name": "共鳴の境地",     "description": "レベル5「共鳴」に到達" },
+    "level_10":      { "name": "神聖脳到達",     "description": "最高レベル「神聖脳」に到達" },
+    "hard_action":   { "name": "本気の一撃",     "description": "初めてハード難易度のアクションを完了" },
+    "early_bird":    { "name": "早起きの戦士",   "description": "午前8時前にアクションを完了" },
+    "night_owl":     { "name": "夜の覚者",       "description": "午後11時以降にアクションを完了" }
+  },
+  "streak": {
+    "label": "日連続",
+    "days": "日"
+  },
   "level": {
     "label": "Lv.",
     "xpLabel": "XP",

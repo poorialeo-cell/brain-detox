@@ -1,17 +1,12 @@
 import React, { useMemo } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  Dimensions,
+  View, Text, StyleSheet, SafeAreaView,
+  StatusBar, ScrollView, Dimensions, TouchableOpacity,
 } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { useI18n } from '../hooks/useI18n';
 import { useAppStore } from '../store/useAppStore';
-import { PartnerType, ScoreEntry } from '../types';
+import { PartnerType, ScoreEntry, Badge } from '../types';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -38,9 +33,29 @@ function getScoreColor(score: number): string {
   return '#f87171';
 }
 
+// ── バッジカード ─────────────────────────────────────────────────────
+function BadgeCard({ badge, t }: { badge: Badge; t: (k: string) => string }) {
+  const earned = !!badge.earnedAt;
+  const dateStr = badge.earnedAt
+    ? new Date(badge.earnedAt).toLocaleDateString()
+    : null;
+
+  return (
+    <View style={[styles.badgeCard, earned ? { borderColor: badge.color + '55' } : styles.badgeCardLocked]}>
+      <Text style={[styles.badgeEmoji, !earned && styles.badgeEmojiLocked]}>{badge.emoji}</Text>
+      <Text style={[styles.badgeName, earned ? { color: badge.color } : styles.badgeTextLocked]} numberOfLines={1}>
+        {t(badge.nameKey)}
+      </Text>
+      <Text style={styles.badgeDate} numberOfLines={1}>
+        {earned && dateStr ? t('badges.earnedOn').replace('{{date}}', dateStr) : t('badges.locked')}
+      </Text>
+    </View>
+  );
+}
+
 export default function HistoryScreen() {
   const { t } = useI18n();
-  const { scoreHistory, selectedPartner, brainScore } = useAppStore();
+  const { scoreHistory, selectedPartner, brainScore, badges } = useAppStore();
 
   const partner = selectedPartner ?? 'counselor';
   const accentColor = PARTNER_COLOR[partner];
@@ -84,6 +99,14 @@ export default function HistoryScreen() {
 
         {/* ヘッダー */}
         <Text style={styles.pageTitle}>{t('history.title')}</Text>
+
+        {/* ── バッジギャラリー ── */}
+        <Text style={styles.sectionLabel}>{t('badges.sectionTitle')}</Text>
+        <View style={styles.badgeGrid}>
+          {badges.map((badge) => (
+            <BadgeCard key={badge.id} badge={badge} t={t} />
+          ))}
+        </View>
 
         {scoreHistory.length === 0 ? (
           /* データなし */
@@ -195,6 +218,21 @@ const styles = StyleSheet.create({
     fontSize: 28, fontWeight: '900', color: '#fff',
     paddingTop: 16, marginBottom: 24,
   },
+
+  badgeGrid: {
+    flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24,
+  },
+  badgeCard: {
+    width: '30%', backgroundColor: '#161616',
+    borderWidth: 1, borderRadius: 14,
+    padding: 12, alignItems: 'center', gap: 4,
+  },
+  badgeCardLocked: { borderColor: '#2a2a2a' },
+  badgeEmoji: { fontSize: 28 },
+  badgeEmojiLocked: { opacity: 0.25 },
+  badgeName: { fontSize: 11, fontWeight: '700', textAlign: 'center' },
+  badgeTextLocked: { color: '#444' },
+  badgeDate: { fontSize: 9, color: '#444', textAlign: 'center' },
 
   emptyContainer: {
     alignItems: 'center', paddingTop: 80, gap: 16,

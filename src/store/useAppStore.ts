@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AppState, PartnerType, Language, ActionSuggestion, ScoreEntry, RecoveryEffectSize } from '../types';
+import { AppState, PartnerType, Language, ActionSuggestion, ScoreEntry, RecoveryEffectSize, Badge } from '../types';
 import { ActionDifficulty } from '../config/scoringConfig';
 import { generateAction, getRandomFallback } from '../services/openAIService';
 import { checkAndIntervene } from '../services/notificationService';
@@ -14,38 +14,29 @@ import {
   todayString,
   getDaysSince,
 } from '../services/scoringService';
+import {
+  initBadges,
+  checkNewBadges,
+  calcNewStreak,
+} from '../services/achievementService';
 
 interface AppStore extends AppState {
-  // 基本設定
   setOnboardingComplete: (value: boolean) => void;
   setSelectedPartner: (partner: PartnerType) => void;
   setBrainScore: (score: number) => void;
   setLanguage: (lang: Language) => void;
   setUserId: (id: string) => void;
-
-  // スコア操作
   applyDecay: () => void;
   applyTestResult: (delta: number) => void;
-
-  // アクション
   fetchAction: () => Promise<void>;
   completeAction: (difficulty?: ActionDifficulty) => void;
   skipAction: () => void;
-
-  // 回復エフェクト
   clearRecoveryEffect: () => void;
-
-  // 通知設定
+  dismissBadgePopup: () => void;
   setNotificationsEnabled: (enabled: boolean) => void;
   setReminderTime: (hour: number, minute: number) => void;
-
-  // テスト
   markTestDone: () => void;
-
-  // Firebase同期
   syncProfile: () => Promise<void>;
-
-  // リセット
   resetAll: () => void;
 }
 
@@ -63,6 +54,9 @@ const initialState: AppState = {
   currentAction: null,
   isActionLoading: false,
   pendingRecoveryEffect: null,
+  badges: initBadges(),
+  newlyEarnedBadges: [],
+  recoveryBoostCount: 0,
   userId: null,
   scoreHistory: [],
   notificationsEnabled: false,
@@ -76,35 +70,28 @@ export const useAppStore = create<AppStore>()(
       ...initialState,
 
       setOnboardingComplete: (value) => set({ isOnboardingComplete: value }),
-      setSelectedPartner: (partner) => set({ selectedPartner: partner }),
-      setBrainScore: (score) => set({ brainScore: Math.min(100, Math.max(0, score)) }),
-      setLanguage: (lang) => set({ language: lang }),
-      setUserId: (id) => set({ userId: id }),
+      setSelectedPartner:    (partner) => set({ selectedPartner: partner }),
+      setBrainScore:         (score) => set({ brainScore: Math.min(100, Math.max(0, score)) }),
+      setLanguage:           (lang) => set({ language: lang }),
+      setUserId:             (id) => set({ userId: id }),
 
-      // ── 自然減衰（アプリ起動時に呼ぶ）────────────────────────────
       applyDecay: () => {
         const { brainScore, lastDecayDate } = get();
         const today = todayString();
-        if (lastDecayDate === today) return; // 今日すでに適用済み
-
+        if (lastDecayDate === today) return;
         const daysSince = getDaysSince(lastDecayDate ?? today);
         const decay = calculateDecay(brainScore, daysSince);
         const newScore = Math.max(0, brainScore - decay);
-
         set({ brainScore: newScore, lastDecayDate: today });
-
         const { selectedPartner, notificationsEnabled } = get();
         checkAndIntervene(newScore, selectedPartner ?? 'counselor', notificationsEnabled);
       },
 
-      // ── ブレインロットテスト結果を反映 ──────────────────────────
       applyTestResult: (delta) => {
         const { brainScore } = get();
-        const newScore = Math.min(100, Math.max(0, brainScore + delta));
-        set({ brainScore: newScore, lastTestDate: todayString() });
+        set({ brainScore: Math.min(100, Math.max(0, brainScore + delta)), lastTestDate: todayString() });
       },
 
-      // ── アクション取得 ──────────────────────────────────────────
       fetchAction: async () => {
         const { selectedPartner, brainScore, language } = get();
         const partner = selectedPartner ?? 'counselor';
@@ -118,35 +105,54 @@ export const useAppStore = create<AppStore>()(
         }
       },
 
-      // ── アクション完了 ──────────────────────────────────────────
       completeAction: (difficulty) => {
-        const { brainScore, totalXP, streak, lastActionDate, currentAction, userId, scoreHistory } = get();
+        const {
+          brainScore, totalXP, streak, lastActionDate,
+          currentAction, userId, scoreHistory,
+          badges, recoveryBoostCount, selectedPartner, notificationsEnabled,
+        } = get();
+
         const today = todayString();
-
-        // 難易度決定（引数 > currentAction > fallback medium）
         const diff: ActionDifficulty = difficulty ?? currentAction?.difficulty ?? 'medium';
+        const now = new Date();
 
-        // ストリーク更新
-        const lastDate = lastActionDate;
-        const daysSinceLast = getDaysSince(lastDate);
-        const newStreak = daysSinceLast <= 1 ? streak + 1 : 1;
+        // ── ストリーク（寛容判定） ──
+        const newStreak = calcNewStreak(streak, lastActionDate);
 
-        // スコア・XP計算
+        // ── スコア・XP計算 ──
         const { scoreGain, xpGain } = calculateActionGain(diff, newStreak, brainScore);
         const newScore = Math.min(100, brainScore + scoreGain);
-        const newXP = totalXP + xpGain;
+        const newXP    = totalXP + xpGain;
         const newLevel = getLevelFromXP(newXP).level;
 
-        // 回復エフェクトサイズ決定
+        // ── 回復ブースト判定（低スコアからの回復） ──
+        const isRecoveryBoost = brainScore < 40;
+        const newRecoveryCount = isRecoveryBoost ? recoveryBoostCount + 1 : recoveryBoostCount;
+
+        // ── エフェクトサイズ ──
         const effectSize: RecoveryEffectSize = getRecoveryEffectSize(xpGain);
 
-        // 履歴エントリ
+        // ── 履歴エントリ ──
         const entry: ScoreEntry = {
-          score: newScore,
-          timestamp: Date.now(),
-          actionTitle: currentAction?.title,
-          xpGained: xpGain,
+          score: newScore, timestamp: Date.now(),
+          actionTitle: currentAction?.title, xpGained: xpGain,
         };
+        const newHistory = [entry, ...scoreHistory].slice(0, 60);
+
+        // ── バッジチェック ──
+        const newBadges = checkNewBadges(badges, {
+          totalXP: newXP,
+          streak: newStreak,
+          currentLevel: newLevel,
+          actionCount: newHistory.length,
+          difficulty: diff,
+          brainScoreBefore: brainScore,
+          recoveryBoostCount: newRecoveryCount,
+        });
+        const updatedBadges = badges.map((b) => {
+          const earned = newBadges.find((nb) => nb.id === b.id);
+          return earned ? earned : b;
+        });
 
         set({
           brainScore: newScore,
@@ -156,24 +162,23 @@ export const useAppStore = create<AppStore>()(
           lastActionDate: today,
           currentAction: null,
           pendingRecoveryEffect: effectSize,
-          scoreHistory: [entry, ...scoreHistory].slice(0, 60),
+          scoreHistory: newHistory,
+          recoveryBoostCount: newRecoveryCount,
+          badges: updatedBadges,
+          newlyEarnedBadges: newBadges,
         });
 
-        // Firestore保存
         if (userId) saveScoreEntry(userId, entry).catch(() => {});
-
-        // スコア低下時の介入通知チェック
-        checkAndIntervene(newScore, get().selectedPartner ?? 'counselor', get().notificationsEnabled);
+        checkAndIntervene(newScore, selectedPartner ?? 'counselor', notificationsEnabled);
       },
 
-      skipAction: () => set({ currentAction: null }),
-
+      skipAction:          () => set({ currentAction: null }),
       clearRecoveryEffect: () => set({ pendingRecoveryEffect: null }),
+      dismissBadgePopup:   () => set((s) => ({ newlyEarnedBadges: s.newlyEarnedBadges.slice(1) })),
 
       setNotificationsEnabled: (enabled) => set({ notificationsEnabled: enabled }),
-      setReminderTime: (hour, minute) => set({ reminderHour: hour, reminderMinute: minute }),
-
-      markTestDone: () => set({ lastTestDate: todayString() }),
+      setReminderTime:         (hour, min) => set({ reminderHour: hour, reminderMinute: min }),
+      markTestDone:            () => set({ lastTestDate: todayString() }),
 
       syncProfile: async () => {
         const { userId, selectedPartner, brainScore, language } = get();
@@ -183,28 +188,30 @@ export const useAppStore = create<AppStore>()(
 
       resetAll: () => {
         const { userId } = get();
-        set({ ...initialState, userId });
+        set({ ...initialState, userId, badges: initBadges() });
       },
     }),
     {
       name: 'brain-detox-storage',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
-        isOnboardingComplete: state.isOnboardingComplete,
-        selectedPartner: state.selectedPartner,
-        language: state.language,
-        brainScore: state.brainScore,
-        totalXP: state.totalXP,
-        currentLevel: state.currentLevel,
-        streak: state.streak,
-        lastActionDate: state.lastActionDate,
-        lastDecayDate: state.lastDecayDate,
-        lastTestDate: state.lastTestDate,
-        notificationsEnabled: state.notificationsEnabled,
-        reminderHour: state.reminderHour,
-        reminderMinute: state.reminderMinute,
-        userId: state.userId,
-        scoreHistory: state.scoreHistory,
+        isOnboardingComplete:  state.isOnboardingComplete,
+        selectedPartner:       state.selectedPartner,
+        language:              state.language,
+        brainScore:            state.brainScore,
+        totalXP:               state.totalXP,
+        currentLevel:          state.currentLevel,
+        streak:                state.streak,
+        lastActionDate:        state.lastActionDate,
+        lastDecayDate:         state.lastDecayDate,
+        lastTestDate:          state.lastTestDate,
+        notificationsEnabled:  state.notificationsEnabled,
+        reminderHour:          state.reminderHour,
+        reminderMinute:        state.reminderMinute,
+        userId:                state.userId,
+        scoreHistory:          state.scoreHistory,
+        badges:                state.badges,
+        recoveryBoostCount:    state.recoveryBoostCount,
       }),
     }
   )

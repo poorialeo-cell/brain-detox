@@ -39,6 +39,16 @@ export interface ScoreEntry {
   xpGained?: number;
 }
 
+// ── バッジ ────────────────────────────────────────────────────────────
+export interface Badge {
+  id: string;
+  nameKey: string;
+  descriptionKey: string;
+  emoji: string;
+  color: string;
+  earnedAt: string | null; // ISO文字列、未獲得はnull
+}
+
 export interface AppState {
   // オンボーディング
   isOnboardingComplete: boolean;
@@ -68,6 +78,11 @@ export interface AppState {
 
   // 回復エフェクト（一時・非永続）
   pendingRecoveryEffect: RecoveryEffectSize | null;
+
+  // バッジ
+  badges: Badge[];
+  newlyEarnedBadges: Badge[];   // ポップアップ表示キュー
+  recoveryBoostCount: number;   // 急落からの回復回数
 
   // Firebase
   userId: string | null;

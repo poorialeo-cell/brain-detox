@@ -5,6 +5,30 @@
     "loading": "Loading...",
     "error": "Something went wrong"
   },
+  "badges": {
+    "sectionTitle": "Achievements",
+    "locked": "Locked",
+    "earnedOn": "Earned {{date}}",
+    "newBadge": "New Achievement!",
+    "first_action":  { "name": "First Step",        "description": "Completed your first action" },
+    "streak_3":      { "name": "3-Day Habit",        "description": "Completed actions 3 days in a row" },
+    "streak_7":      { "name": "Week Warrior",       "description": "Completed actions 7 days in a row" },
+    "streak_14":     { "name": "Two-Week Master",    "description": "Completed actions 14 days in a row" },
+    "streak_30":     { "name": "Iron Month",         "description": "Completed actions 30 days in a row" },
+    "xp_100":        { "name": "Brain Gardener",     "description": "Reached 100 total XP" },
+    "xp_500":        { "name": "Brain Seeker",       "description": "Reached 500 total XP" },
+    "xp_1000":       { "name": "Sacred Brain",       "description": "Reached 1000 total XP" },
+    "recovery_3":    { "name": "Unbreakable Spirit", "description": "Recovered from a low score 3 times" },
+    "level_5":       { "name": "Resonance Reached",  "description": "Reached Level 5 Resonance" },
+    "level_10":      { "name": "Sacred Brain Achieved", "description": "Reached the highest level" },
+    "hard_action":   { "name": "Full Power Strike",  "description": "Completed a hard difficulty action" },
+    "early_bird":    { "name": "Early Bird Warrior", "description": "Completed an action before 8am" },
+    "night_owl":     { "name": "Night Awakened",     "description": "Completed an action after 11pm" }
+  },
+  "streak": {
+    "label": "day streak",
+    "days": "days"
+  },
   "level": {
     "label": "Lv.",
     "xpLabel": "XP",

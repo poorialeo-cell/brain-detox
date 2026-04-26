@@ -40,7 +40,7 @@ export default function HomeScreen() {
   const { t } = useI18n();
   const haptics = useHaptics();
   const navigation = useNavigation<HomeNav>();
-  const { brainScore, totalXP, selectedPartner, pendingRecoveryEffect, clearRecoveryEffect } = useAppStore();
+  const { brainScore, totalXP, streak, selectedPartner, pendingRecoveryEffect, clearRecoveryEffect } = useAppStore();
 
   const partner = selectedPartner ?? 'counselor';
   const pc = PARTNER_CONFIG[partner];
@@ -86,9 +86,17 @@ export default function HomeScreen() {
               </Text>
             </View>
           </View>
-          <View style={styles.scoreBox}>
-            <Text style={[styles.scoreNumber, { color: lc.color }]}>{brainScore}</Text>
-            <Text style={styles.scoreMax}>/100</Text>
+          <View style={styles.rightColumn}>
+            {streak > 0 && (
+              <View style={styles.streakBadge}>
+                <Text style={styles.streakEmoji}>🔥</Text>
+                <Text style={styles.streakCount}>{streak}</Text>
+              </View>
+            )}
+            <View style={styles.scoreBox}>
+              <Text style={[styles.scoreNumber, { color: lc.color }]}>{brainScore}</Text>
+              <Text style={styles.scoreMax}>/100</Text>
+            </View>
           </View>
         </View>
 
@@ -205,6 +213,16 @@ const styles = StyleSheet.create({
     color: '#444',
     letterSpacing: 2.5,
   },
+  rightColumn: {
+    alignItems: 'flex-end', gap: 4,
+  },
+  streakBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: '#2a1a00', borderWidth: 1, borderColor: '#fbbf2455',
+    borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4,
+  },
+  streakEmoji: { fontSize: 14 },
+  streakCount: { fontSize: 14, fontWeight: '800', color: '#fbbf24' },
   scoreBox: {
     flexDirection: 'row',
     alignItems: 'baseline',
