@@ -8,7 +8,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useI18n } from '../hooks/useI18n';
 import { useAppStore } from '../store/useAppStore';
-import BrainVisual from '../components/BrainVisual';
+import BrainCanvas from '../components/BrainCanvas';
 import BrainRecoveryEffect from '../components/BrainRecoveryEffect';
 import GradientBackground from '../components/GradientBackground';
 import { useHaptics } from '../hooks/useHaptics';
@@ -103,9 +103,9 @@ export default function HomeScreen() {
         {/* ── 脳ビジュアル ── */}
         <View style={styles.brainSection}>
           <View>
-            <BrainVisual score={brainScore} />
+            <BrainCanvas score={brainScore} />
             {showEffect && pendingRecoveryEffect && (
-              <View style={styles.effectWrapper}>
+              <View style={styles.effectWrapper} pointerEvents="none">
                 <BrainRecoveryEffect
                   size={pendingRecoveryEffect}
                   color={lc.color}
