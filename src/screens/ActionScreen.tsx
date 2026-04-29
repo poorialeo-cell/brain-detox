@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  SafeAreaView, StatusBar, Animated, Easing, ScrollView,
+  SafeAreaView, StatusBar, Animated, Easing, ScrollView, Dimensions,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -13,6 +13,9 @@ import { useHaptics } from '../hooks/useHaptics';
 import GradientBackground from '../components/GradientBackground';
 import BreathingGuide from '../components/BreathingGuide';
 import TimerGuide from '../components/TimerGuide';
+import BrainRotTestFlow from '../components/BrainRotTestFlow';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
 
 type ActionNav = BottomTabNavigationProp<MainTabParamList, 'Action'>;
 
@@ -162,7 +165,25 @@ export default function ActionScreen() {
 
   type ScreenState = 'action' | 'guide' | 'feedback';
   const [screenState, setScreenState] = useState<ScreenState>('action');
-  const haptics = useHaptics();
+  const [activeTab, setActiveTab]     = useState<'action' | 'test'>('action');
+  const haptics   = useHaptics();
+  const tabAnim   = useRef(new Animated.Value(0)).current;
+
+  const switchTab = (tab: 'action' | 'test') => {
+    haptics.light();
+    setActiveTab(tab);
+    Animated.timing(tabAnim, {
+      toValue: tab === 'action' ? 0 : 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleTestComplete = (delta: number) => {
+    useAppStore.getState().applyTestResult(delta);
+    useAppStore.getState().markTestDone();
+    switchTab('action');
+  };
 
   const cardOpacity    = useRef(new Animated.Value(0)).current;
   const cardTranslateY = useRef(new Animated.Value(30)).current;
@@ -232,10 +253,43 @@ export default function ActionScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-      {/* ヘッダー */}
-      {screenState === 'action' && (
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>{t('action.title')}</Text>
+      {/* タブバー */}
+      {screenState !== 'feedback' && (
+        <View style={styles.tabBar}>
+          {(['action', 'test'] as const).map((tab) => (
+            <TouchableOpacity
+              key={tab}
+              style={styles.tabItem}
+              onPress={() => switchTab(tab)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.tabLabel, activeTab === tab && styles.tabLabelActive]}>
+                {tab === 'action' ? t('action.title') : t('brainRotTest.tabLabel')}
+              </Text>
+            </TouchableOpacity>
+          ))}
+          <Animated.View style={[
+            styles.tabUnderline,
+            { width: (SCREEN_WIDTH - 44) / 2 },
+            { transform: [{ translateX: tabAnim.interpolate({ inputRange: [0, 1], outputRange: [0, (SCREEN_WIDTH - 44) / 2] }) }] },
+          ]} />
+        </View>
+      )}
+
+      {/* アクション内コンテンツ or テスト */}
+      {activeTab === 'test' && screenState !== 'feedback' ? (
+        <BrainRotTestFlow
+          onComplete={handleTestComplete}
+          onSkip={() => switchTab('action')}
+          showSkipButton
+          showBadge={false}
+        />
+      ) : (
+      <>
+
+      {/* アクションヘッダー（アクションタブのみ） */}
+      {screenState === 'action' && activeTab === 'action' && (
+        <View style={styles.actionHeader}>
           {!isActionLoading && (
             <TouchableOpacity onPress={fetchAction} style={styles.refreshBtn}>
               <Text style={styles.refreshIcon}>🔄</Text>
@@ -327,6 +381,8 @@ export default function ActionScreen() {
           </Animated.View>
         </ScrollView>
       ) : null}
+      </>
+      )}
     </SafeAreaView>
     </GradientBackground>
   );
@@ -334,8 +390,29 @@ export default function ActionScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0d0d0d' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingTop: 14, paddingBottom: 8 },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: '#fff' },
+
+  /* 内部タブバー */
+  tabBar: {
+    flexDirection: 'row',
+    marginHorizontal: 22,
+    marginTop: 10,
+    marginBottom: 6,
+    backgroundColor: '#161616',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  tabItem: { flex: 1, paddingVertical: 12, alignItems: 'center' },
+  tabLabel: { fontSize: 13, fontWeight: '700', color: '#555' },
+  tabLabelActive: { color: '#a78bfa' },
+  tabUnderline: {
+    position: 'absolute', bottom: 0, height: 2,
+    backgroundColor: '#a78bfa', borderRadius: 1,
+  },
+
+  actionHeader: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 24, paddingTop: 4, paddingBottom: 4 },
   refreshBtn: { padding: 6 },
   refreshIcon: { fontSize: 20 },
 

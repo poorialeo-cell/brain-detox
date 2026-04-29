@@ -52,7 +52,9 @@
     "title": "Brain Rot Status Test",
     "subtitle": "Be honest. The data will help you.",
     "skipButton": "Skip",
+    "backButton": "Back",
     "badge": "Periodic Check",
+    "tabLabel": "Test",
     "q1": {
       "question": "How many hours did you watch short videos today?",
       "a0": "Barely watched (under 30 min)",
