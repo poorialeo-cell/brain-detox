@@ -75,6 +75,32 @@ export default function QuizScreen({ navigation }: Props) {
     [translateX, navigation, setSelectedPartner, setBrainScore]
   );
 
+  const handleBack = useCallback(() => {
+    if (isAnimating || currentIndex === 0) return;
+    haptics.light();
+    setIsAnimating(true);
+
+    Animated.timing(translateX, {
+      toValue: width,
+      duration: 220,
+      easing: Easing.in(Easing.cubic),
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) {
+        setAnswers((prev) => prev.slice(0, -1));
+        setCurrentIndex((prev) => prev - 1);
+        setIsAnimating(false);
+        translateX.setValue(-width);
+        Animated.timing(translateX, {
+          toValue: 0,
+          duration: 280,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }).start();
+      }
+    });
+  }, [isAnimating, currentIndex, translateX, haptics]);
+
   const handleAnswer = useCallback(
     (answerIndex: number) => {
       if (isAnimating) return;
@@ -106,7 +132,9 @@ export default function QuizScreen({ navigation }: Props) {
       {/* ヘッダー */}
       <View style={styles.header}>
         <View style={styles.progressLabelRow}>
-          <Text style={styles.progressLabel}>DIAGNOSIS</Text>
+          <TouchableOpacity onPress={handleBack} style={styles.backBtn} activeOpacity={0.7}>
+            <Text style={[styles.backText, currentIndex === 0 && { opacity: 0 }]}>‹ 戻る</Text>
+          </TouchableOpacity>
           <Text style={styles.progressCount}>
             {currentIndex + 1}{' '}
             <Text style={styles.progressTotal}>/ {TOTAL_QUESTIONS}</Text>
@@ -164,12 +192,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-  progressLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#555',
-    letterSpacing: 2,
-  },
+  backBtn: { minWidth: 60, paddingVertical: 4 },
+  backText: { color: '#a78bfa', fontSize: 15, fontWeight: '600' },
   progressCount: {
     fontSize: 18,
     fontWeight: '800',

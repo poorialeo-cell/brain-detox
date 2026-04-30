@@ -145,10 +145,13 @@ export default function BrainRotTestFlow({
       <View style={styles.header}>
         <TouchableOpacity
           onPress={handleBack}
-          style={[styles.backBtn, currentIdx === 0 && styles.backBtnHidden]}
+          style={styles.backBtn}
           disabled={currentIdx === 0}
+          activeOpacity={0.7}
         >
-          <Text style={styles.backText}>‹ {t('brainRotTest.backButton')}</Text>
+          <Text style={[styles.backText, currentIdx === 0 && { opacity: 0 }]}>
+            ‹ {t('brainRotTest.backButton')}
+          </Text>
         </TouchableOpacity>
 
         {showBadge && (
@@ -216,8 +219,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 4,
   },
-  backBtn: { paddingVertical: 8, paddingHorizontal: 4 },
-  backBtnHidden: { opacity: 0 },
+  backBtn: { paddingVertical: 8, paddingHorizontal: 4, minWidth: 60 },
   backText: { color: '#a78bfa', fontSize: 15, fontWeight: '600' },
   badge: {
     backgroundColor: '#1e1433', borderWidth: 1, borderColor: '#a78bfa44',
