@@ -1,0 +1,87 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── ヘルパー関数 ───────────────────────────────────────────────────
+
+    /** 認証済みユーザーが自分自身のドキュメントを操作しているか */
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    /** ユーザープロフィールの書き込みデータが正当か */
+    function validProfile() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['partner', 'brainScore', 'language', 'updatedAt'])
+          && d.partner   is string  && d.partner   in ['teacher','counselor','scientist','trainer']
+          && d.brainScore is number  && d.brainScore >= 0  && d.brainScore <= 100
+          && d.language  is string  && d.language  in ['ja','en','th'];
+    }
+
+    /** スコア履歴エントリの書き込みデータが正当か */
+    function validScoreEntry() {
+      let d = request.resource.data;
+      // 必須フィールド
+      let hasRequired = d.keys().hasAll(['score', 'timestamp', 'kind']);
+      // score は 0〜100 の数値
+      let validScore = d.score is number && d.score >= 0 && d.score <= 100;
+      // kind は既定値のみ
+      let validKind  = d.kind is string && d.kind in ['action', 'brainRotTest'];
+      // testDelta が存在する場合は ±30 以内に制限（クライアント改ざん防止）
+      let validDelta = !('testDelta' in d)
+          || (d.testDelta is number && d.testDelta >= -30 && d.testDelta <= 30);
+      // xpGained が存在する場合は 0〜500 以内に制限（極端な改ざんを排除）
+      let validXp = !('xpGained' in d)
+          || (d.xpGained is number && d.xpGained >= 0 && d.xpGained <= 500);
+      // scoreGain が存在する場合は ±30 以内
+      let validGain = !('scoreGain' in d)
+          || (d.scoreGain is number && d.scoreGain >= -30 && d.scoreGain <= 30);
+      // actionTitle が存在する場合は 200 文字以下（巨大ペイロード防止）
+      let validTitle = !('actionTitle' in d)
+          || (d.actionTitle is string && d.actionTitle.size() <= 200);
+      // フィールド集合を制限（不明なフィールドの追加を禁止）
+      let onlyKnown = d.keys().hasOnly([
+        'score', 'timestamp', 'kind', 'actionTitle', 'xpGained', 'scoreGain', 'testDelta'
+      ]);
+      return hasRequired && validScore && validKind
+          && validDelta && validXp && validGain && validTitle && onlyKnown;
+    }
+
+    // ── ユーザードキュメント ──────────────────────────────────────────
+
+    match /users/{uid} {
+      // 自分のプロフィールのみ読み書き可
+      allow read:   if isOwner(uid);
+      allow create, update: if isOwner(uid) && validProfile();
+      // 自身のアカウント削除を許可（GDPR/CCPA・App Store 規約対応）
+      allow delete: if isOwner(uid);
+
+      // ── スコア履歴（サブコレクション） ────────────────────────────
+
+      match /scoreHistory/{entryId} {
+        // 自分の履歴のみ読み・追記可（update は不可・delete は本人のみ）
+        allow read:   if isOwner(uid);
+        allow create: if isOwner(uid) && validScoreEntry();
+        // 一度保存したエントリは変更不可（改ざん防止）
+        allow update: if false;
+        // delete は本人のみ（resetAll でのデータ完全削除のため）
+        allow delete: if isOwner(uid);
+      }
+    }
+
+    // ── レート制限カウンタ ─────────────────────────────────────────────
+    // Cloud Functions が admin SDK 経由で書き込むためクライアント書き込みは禁止
+    // 読み取りは本人のみ許可（デバッグ用途）
+
+    match /rateLimits/{uid} {
+      allow read: if isOwner(uid);
+      allow write: if false; // Functions 側からのみ admin SDK で書き込み
+    }
+
+    // 上記以外はすべて拒否
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

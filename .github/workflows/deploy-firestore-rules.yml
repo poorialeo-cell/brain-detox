@@ -1,0 +1,28 @@
+name: Deploy Firestore Rules
+
+on:
+  push:
+    branches:
+      - main          # main ブランチへの push で自動デプロイ
+    paths:
+      - 'firestore.rules'
+      - 'firestore.indexes.json'
+  workflow_dispatch:  # 手動実行も可能
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy Firestore Rules
+        uses: w9jds/firebase-action@master
+        with:
+          args: deploy --only firestore:rules,firestore:indexes
+        env:
+          # GitHub リポジトリの Settings > Secrets に FIREBASE_TOKEN を登録すること
+          # 取得方法: firebase login:ci （ローカルで実行）
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          # または GOOGLE_APPLICATION_CREDENTIALS でサービスアカウントキーを使う場合:
+          # GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
