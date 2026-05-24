@@ -11,18 +11,22 @@ import TabBar from '../components/TabBar';
 import QuizScreen from '../screens/QuizScreen';
 import PartnerScreen from '../screens/PartnerScreen';
 import BrainRotTestScreen from '../screens/BrainRotTestScreen';
+import DataResetConfirmScreen from '../screens/DataResetConfirmScreen';
 import HomeScreen from '../screens/HomeScreen';
 import ActionScreen from '../screens/ActionScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import ThemeSelectScreen from '../screens/ThemeSelectScreen';
+import LanguageSelectScreen from '../screens/LanguageSelectScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab   = createBottomTabNavigator<MainTabParamList>();
 
 function MainTabs() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   return (
     <Tab.Navigator
+      key={i18n.language}
       tabBar={(props) => <TabBar {...props} />}
       screenOptions={{
         headerShown: false,
@@ -50,8 +54,11 @@ export default function AppNavigator() {
           </>
         ) : (
           <>
-            <Stack.Screen name="Main"          component={MainTabs}           options={{ animation: 'fade' }} />
-            <Stack.Screen name="BrainRotTest"  component={BrainRotTestScreen} options={{ animation: 'slide_from_bottom', presentation: 'modal' }} />
+            <Stack.Screen name="Main"             component={MainTabs}              options={{ animation: 'fade' }} />
+            <Stack.Screen name="BrainRotTest"     component={BrainRotTestScreen}  options={{ animation: 'slide_from_bottom', presentation: 'modal' }} />
+            <Stack.Screen name="DataResetConfirm" component={DataResetConfirmScreen} options={{ animation: 'slide_from_bottom', presentation: 'modal' }} />
+            <Stack.Screen name="ThemeSelect"      component={ThemeSelectScreen} options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="LanguageSelect"   component={LanguageSelectScreen} options={{ animation: 'slide_from_right' }} />
           </>
         )}
       </Stack.Navigator>

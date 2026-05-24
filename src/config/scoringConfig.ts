@@ -40,12 +40,21 @@ export const SCORING_CONFIG = {
   test: {
     intervalDays: 3,   // 何日ごとにテストを促すか
     maxChange: 10,     // 1回のテストで変動する最大スコア幅
-    // Q1: 動画視聴時間
+    // 旧3問形式（参照用・calculateTestResult 互換）
     q1Scores: [3, 0, -3, -5],
-    // Q2: スマホを見てしまう頻度
     q2Scores: [3, 0, -3, -5],
-    // Q3: 脳の自己評価
     q3Scores: [4, 0, -3, -6],
+    /** 2分 Vibe Check（ミニゲーム）＋ショート動画5択から delta を算出 */
+    vibeCheck: {
+      /** B_raw = W1*Accuracy + W2*(1/avgRT_sec 正規化) + Bonus 後 0–1 に丸め、delta に写像 */
+      W1: 0.52,
+      W2: 0.28,
+      /** 1/AvgRT の正規化に使う秒（これより速い反応は満点扱い） */
+      speedNormSeconds: 0.55,
+      maxBonus: 0.2,
+      /** ショート動画5択（視聴が少ないほど良い）→ delta 加算 */
+      videoHoursScores: [4, 2, 0, -3, -5] as const,
+    },
   },
 
   // ── XPレベル定義 ─────────────────────────────────────────────

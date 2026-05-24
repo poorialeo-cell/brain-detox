@@ -7,6 +7,8 @@ import { useI18n } from '../hooks/useI18n';
 import { useHaptics } from '../hooks/useHaptics';
 import { useAppStore } from '../store/useAppStore';
 import { Badge, PartnerType } from '../types';
+import PartnerPortrait from './PartnerPortrait';
+import { PARTNER_UI } from '../config/partnerUi';
 
 interface Props {
   badge: Badge;
@@ -75,9 +77,13 @@ export default function BadgePopup({ badge, onDismiss }: Props) {
 
         {/* パートナーの褒め言葉 */}
         <View style={styles.praiseRow}>
-          <View style={[styles.partnerAvatar, { borderColor: pc.color + '66' }]}>
-            <Text style={styles.partnerEmoji}>{pc.emoji}</Text>
-          </View>
+          <PartnerPortrait
+            partner={partner}
+            pose="praise"
+            size={PARTNER_UI.badgePortrait}
+            borderColor={pc.color}
+            borderWidth={3}
+          />
           <View style={styles.bubbleWrapper}>
             <View style={[styles.bubbleTail, { borderRightColor: pc.color + '55' }]} />
             <View style={[styles.bubble, { borderColor: pc.color + '44' }]}>
@@ -105,8 +111,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#161616',
     borderWidth: 1,
     borderRadius: 22,
-    padding: 18,
-    gap: 14,
+    padding: 20,
+    gap: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.5,
@@ -130,15 +136,11 @@ const styles = StyleSheet.create({
   badgeDesc: { fontSize: 13, color: '#888', fontWeight: '500', lineHeight: 18 },
   divider: { height: 1, backgroundColor: '#222' },
   praiseRow: {
-    flexDirection: 'row', alignItems: 'center',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
   },
-  partnerAvatar: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: '#1a1a1a', borderWidth: 2,
-    justifyContent: 'center', alignItems: 'center', flexShrink: 0,
-  },
-  partnerEmoji: { fontSize: 20 },
-  bubbleWrapper: { flex: 1, flexDirection: 'row', alignItems: 'center', marginLeft: 4 },
+  bubbleWrapper: { flex: 1, flexDirection: 'row', alignItems: 'center', marginLeft: 0, paddingTop: 2 },
   bubbleTail: {
     width: 0, height: 0,
     borderTopWidth: 6, borderTopColor: 'transparent',
@@ -147,8 +149,8 @@ const styles = StyleSheet.create({
   },
   bubble: {
     flex: 1, backgroundColor: '#1a1a1a', borderWidth: 1,
-    borderRadius: 12, borderTopLeftRadius: 4,
-    paddingHorizontal: 12, paddingVertical: 9,
+    borderRadius: 14, borderTopLeftRadius: 4,
+    paddingHorizontal: 14, paddingVertical: 11,
   },
-  praiseText: { fontSize: 13, fontWeight: '700', fontStyle: 'italic', lineHeight: 19 },
+  praiseText: { fontSize: 14, fontWeight: '700', fontStyle: 'italic', lineHeight: 21 },
 });

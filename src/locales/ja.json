@@ -5,6 +5,17 @@
     "loading": "読み込み中...",
     "error": "エラーが発生しました"
   },
+  "splash": {
+    "tagline": "ブレインロット、今日から終わり。"
+  },
+  "timer": {
+    "title": "タイマー",
+    "subtitle": "集中時間を計ろう⏱️",
+    "complete": "時間になりました！",
+    "pause": "一時停止",
+    "resume": "再開",
+    "finish": "完了して次へ"
+  },
   "badges": {
     "sectionTitle": "実績バッジ",
     "tabBadges": "実績",
@@ -80,7 +91,51 @@
     "resultNeutral": "普通の状態です。",
     "resultNegative": "回復が必要です。アクションで取り戻そう。",
     "scoreDelta": "スコアが変化しました",
-    "continueButton": "続ける"
+    "continueButton": "続ける",
+    "limitTitle": "いまは受験できません",
+    "limitDaily": "1日のテストは2回までです。日が変わってから、またはまた明日お試しください。",
+    "limitCooldown": "前回のテストから6時間以上空けてください。次は {{time}} 頃から受験できます。",
+    "limitDismiss": "閉じる",
+    "vibe": {
+      "title": "2分 Vibe Check",
+      "timeLeft": "残り {{sec}} 秒",
+      "combo": "コンボ ×{{n}}",
+      "synapseLen": "連鎖 {{n}} 個",
+      "phase": {
+        "colorTitle": "① Color Swerve（抑制）",
+        "colorHint": "表示されている文字の「インクの色」を、下のカラーボタンからタップ。読む文字ではなく色だけ見て。",
+        "synapseTitle": "② Synapse Match（作業記憶）",
+        "synapseHint": "リズムで順番に出るアイコンの並びを覚え、同じ順でタップしよう。",
+        "synapseRecall": "同じ順番でタップ！",
+        "focusTitle": "③ Focus Shield（集中維持）",
+        "focusHint": "飛んでくる通知やミームに触れず、中央の脳を押し続けよう。",
+        "focusHold": "押し続ける"
+      },
+      "colors": {
+        "red": "赤",
+        "blue": "青",
+        "green": "緑",
+        "yellow": "黄"
+      },
+      "survey": {
+        "question": "今日のショート動画はどのくらい見た？",
+        "a0": "ほぼ見ていない",
+        "a1": "30分未満",
+        "a2": "30分〜2時間",
+        "a3": "2〜4時間",
+        "a4": "4時間以上"
+      },
+      "distractors": {
+        "d0": "🔔 いいねされました",
+        "d1": "💬 DMが届きました",
+        "d2": "⚡ セール中",
+        "d3": "🧂",
+        "d4": "👁️👄👁️",
+        "d5": "🫠",
+        "d6": "🔥 続きはこちら",
+        "d7": "📦 配達中"
+      }
+    }
   },
   "breathing": {
     "inhale": "吸って",
@@ -88,13 +143,16 @@
     "exhale": "吐いて",
     "cycleOf": "/ {{total}} サイクル",
     "complete": "完了！",
-    "ready": "準備ができたらタップ"
+    "ready": "準備ができたらタップ",
+    "cycleComplete": "セット完了"
   },
-  "timer": {
-    "complete": "時間になりました！",
-    "pause": "一時停止",
-    "resume": "再開",
-    "finish": "完了して次へ"
+  "guide": {
+    "cancel": "キャンセル",
+    "timerExtendQuestion": "時間になりました。まだこのアクションを続けていますか？延長するか、このまま実時間で完了できます。",
+    "extendMinutes": "+{{n}}分",
+    "finishWithElapsed": "この内容で完了する",
+    "breathingContinueQuestion": "呼吸のセットが終わりました。もう少し続けますか？",
+    "breathingAddCycles": "あと{{n}}サイクル続ける"
   },
   "nav": {
     "home": "ホーム",
@@ -109,9 +167,26 @@
     "statsAverage": "平均スコア",
     "statsActions": "完了アクション",
     "chartLabel": "過去の推移",
+    "chartRangeDay": "日",
+    "chartRangeWeek": "週",
+    "chartRangeMonth": "月",
+    "chartRangeAll": "全体",
+    "chartNeedsMore": "グラフを表示するには、記録がもう1件以上必要です。カレンダーで過去の記録を確認できます。",
     "recentLabel": "最近の記録",
+    "gainedLabel": "獲得",
+    "labelTotalScore": "記録後",
     "today": "今日",
-    "yesterday": "昨日"
+    "yesterday": "昨日",
+    "hintScoreDot": "この丸の色は、その記録をつけたときのブレインスコア帯の目安です。緑は高め、紫は中程度、黄は注意、赤は低めの傾向を示します。点数そのものは右側の数字で確認できます。",
+    "flipToCalendar": "カレンダーを表示",
+    "flipToChart": "グラフを表示",
+    "rowBrainRotTest": "ブレインロットテスト",
+    "dayDetailTitle": "この日の記録",
+    "entryKindAction": "アクション完了",
+    "entryKindTest": "ブレインロットテスト",
+    "entryScoreAfter": "記録後のスコア",
+    "entryXp": "+{{xp}} XP",
+    "entryGain": "スコア変動 {{n}}"
   },
   "quiz": {
     "title": "あなたのタイプを診断",
@@ -179,47 +254,69 @@
   },
   "home": {
     "title": "YOUR BRAIN",
+    "brainMonitorTitle": "Brain Monitor",
+    "yourPartnerTitle": "Your Partner",
+    "yourBrain": "Your Brain",
+    "partnerMessageLoading": "メッセージを準備しています…",
     "scoreLabel": "ブレインスコア",
     "level1": "崩壊・ブレインロット",
     "level2": "警告・停滞",
     "level3": "普通・安定",
     "level4": "健康・豊潤",
     "level5": "神聖・超越",
+    "statusHealthy": "良好",
+    "statusWarning": "注意",
+    "statusCritical": "要回復",
     "actionButton": "今すぐアクションを求める",
     "partnerGreeting": {
       "teacher": "まだ満足するな。今日も行動あるのみだ。",
       "counselor": "今日もよく来てくれたね。一緒に頑張ろう。",
       "scientist": "データを確認した。今日の最適なアクションを提案しよう。",
       "trainer": "よっしゃ！今日もフルスロットルでいくぞ！"
+    },
+    "hints": {
+      "level": "共鳴レベル（Lv）は、これまでに獲得したXPの合計で上がります。アクションを完了するとXPが加算され、レベルに応じた称号が表示されます。",
+      "streak": "連続日数は、「別々の日にアクションを1回以上完了した日」がつながっている数です。ストリークが高いほどスコア獲得にボーナスが付きます。途切れると0に戻ります。",
+      "score": "ブレインスコア（0〜100）は、今の脳のコンディション指標です。アクションやテストで上がり、しばらくアプリを開いていない日には少しずつ下がることがあります。",
+      "state": "ここはスコア帯に応じた状態の名前です。脳のイラストの見た目や、パートナーの反応の目安になります。"
     }
   },
   "action": {
     "title": "アクション提案",
+    "planProgress": "アクションプラン {{current}}/{{total}}（目安 合計{{minutes}}分）",
+    "offlineMode": "📡 オフラインモード",
     "generating": "パートナーが考え中...",
     "completeButton": "完了！",
     "skipButton": "スキップ",
     "nextButton": "次のアクションを見る",
     "homeButton": "ホームに戻る",
     "feedbackTitle": "アクション完了！",
-    "feedbackScore": "+5pt",
+    "feedbackPartnerLine": "パートナーから",
+    "feedbackScore": "+{{points}}pt",
     "feedbackCongrats": {
       "teacher": "よし。それでいい。次も手を抜くな。",
       "counselor": "よく頑張ったね。本当に誇りに思うよ。",
       "scientist": "行動を完了した。脳に変化が起きている。",
       "trainer": "最高だ！！その調子でいけ！！"
     },
-    "reactionLabel": "どうだった？",
+    "reactionLabel": "アクションはどうだった？",
     "reactionGreat": "良かった",
     "reactionOk": "普通",
     "reactionHard": "きつかった",
     "difficulty": {"easy": "かんたん", "medium": "ふつう", "hard": "ハード"},
+    "feedbackBrainHomeButton": "ホームで脳の状態を確認する",
     "startGuide": "ガイドで始める ✨",
-    "guideSkip": "スキップして完了"
+    "guideSkip": "スキップして完了",
+    "offlineFallbackButton": "オフラインモードで実行"
   },
   "notifications": {
     "sectionTitle": "通知",
     "enableToggle": "通知を有効にする",
-    "reminderTime": "毎日のリマインド時間",
+    "reminderTime": "毎日のリマインド時間（複数可）",
+    "noReminderTimes": "まだ通知時間が設定されていません",
+    "hourLabel": "時",
+    "minuteLabel": "分",
+    "addReminderTime": "{{time}} に通知を追加",
     "testButton": "今すぐテスト送信",
     "permissionDenied": "設定アプリから通知を許可してください",
     "daily": {
@@ -239,7 +336,9 @@
       "counselor": "スコアが下がってきてるよ…大丈夫？一緒に回復しよう。",
       "scientist": "脳スコアが臨界値を下回った。今すぐ介入が必要だ。",
       "trainer": "スコアがピンチだ！でも大丈夫！今すぐ立て直せ！！"
-    }
+    },
+    "timerFinishedTitle": "{{partner}} — タイマー終了",
+    "timerFinishedBody": "「{{title}}」の設定時間が終わりました。アプリで完了を記録できます。"
   },
   "settings": {
     "title": "設定",
@@ -247,6 +346,13 @@
     "currentPartner": "現在のパートナー",
     "changePartner": "パートナーを変更する",
     "changePartnerDesc": "診断をやり直してパートナーを変更します",
+    "sectionTheme": "テーマ",
+    "themeDark": "ダーク",
+    "themeWhite": "ホワイト",
+    "themeGreen": "グリーン",
+    "themeBlue": "ブルー",
+    "themeOrange": "オレンジ",
+    "themeRed": "レッド",
     "sectionLanguage": "言語",
     "langJa": "日本語",
     "langEn": "English",
@@ -258,6 +364,19 @@
     "resetConfirmMessage": "すべてのデータ（スコア・パートナー・進捗）が削除されます。この操作は元に戻せません。",
     "resetConfirmYes": "リセットする",
     "resetConfirmNo": "キャンセル",
-    "version": "バージョン"
+    "resetSecondTitle": "データを削除する前に",
+    "resetSecondIntro": "実行すると端末に保存されているアプリ内のデータはすべて消え、元に戻せません。",
+    "resetSecondBullets": "• ブレインスコア・XP・レベル・ストリーク\n• スコア履歴（アクション・テストの記録）\n• パートナー選択と診断（はじめからやりなおします）\n• バッジの獲得状態\n• アクション提案の履歴（おすすめの偏りをリセット）",
+    "resetAckLabel": "上記を理解し、すべて削除することに同意する",
+    "resetSecondBack": "設定に戻る",
+    "resetExecute": "すべて削除して初期状態へ",
+    "version": "バージョン",
+    "sectionAbout": "アプリ情報",
+    "privacyPolicy": "プライバシーポリシー",
+    "privacyPolicyDesc": "個人情報の取り扱いについて",
+    "termsOfService": "利用規約",
+    "termsOfServiceDesc": "本アプリの利用条件について",
+    "openLinkErrorTitle": "リンクを開けません",
+    "openLinkErrorMessage": "ブラウザを開くことができませんでした。ネットワーク接続を確認してください。"
   }
 }

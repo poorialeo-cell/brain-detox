@@ -16,24 +16,32 @@ import { useAppStore } from '../store/useAppStore';
 import { PartnerType, RootStackParamList } from '../types';
 import { useHaptics } from '../hooks/useHaptics';
 import GradientBackground from '../components/GradientBackground';
+import { useTheme } from '../hooks/useTheme';
 
 const { width } = Dimensions.get('window');
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Quiz'>;
 
-const TOTAL_QUESTIONS = 5;
-const QUESTION_KEYS = ['q1', 'q2', 'q3', 'q4', 'q5'] as const;
+type QuestionKey = 'q1' | 'q2' | 'q3' | 'q4' | 'q5';
+
+const TOTAL_FULL = 5;
+const KEYS_FULL: QuestionKey[] = ['q1', 'q2', 'q3', 'q4', 'q5'];
+const KEYS_PARTNER_ONLY: QuestionKey[] = ['q4', 'q5'];
 const ANSWER_KEYS = ['a0', 'a1', 'a2', 'a3'] as const;
 const SCORE_MAP = [90, 65, 35, 10];
 const PARTNER_MAP: PartnerType[] = ['teacher', 'counselor', 'scientist', 'trainer'];
 
-function determinePartner(answers: number[]): PartnerType {
+function determinePartnerFromQ4Q5(q4Answer: number, q5Answer: number): PartnerType {
   const scores: Record<PartnerType, number> = {
     teacher: 0, counselor: 0, scientist: 0, trainer: 0,
   };
-  scores[PARTNER_MAP[answers[3]]] += 2;
-  scores[PARTNER_MAP[answers[4]]] += 1;
+  scores[PARTNER_MAP[q4Answer]] += 2;
+  scores[PARTNER_MAP[q5Answer]] += 1;
   return Object.entries(scores).sort(([, a], [, b]) => b - a)[0][0] as PartnerType;
+}
+
+function determinePartner(answers: number[]): PartnerType {
+  return determinePartnerFromQ4Q5(answers[3], answers[4]);
 }
 
 function calculateBrainScore(answers: number[]): number {
@@ -42,8 +50,13 @@ function calculateBrainScore(answers: number[]): number {
 
 export default function QuizScreen({ navigation }: Props) {
   const { t } = useI18n();
+  const theme = useTheme();
   const haptics = useHaptics();
+  const partnerQuizOnly = useAppStore((s) => s.partnerQuizOnly);
   const { setSelectedPartner, setBrainScore } = useAppStore();
+
+  const questionKeys = partnerQuizOnly ? KEYS_PARTNER_ONLY : KEYS_FULL;
+  const totalQuestions = partnerQuizOnly ? KEYS_PARTNER_ONLY.length : TOTAL_FULL;
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
@@ -53,7 +66,7 @@ export default function QuizScreen({ navigation }: Props) {
 
   const advanceQuestion = useCallback(
     (newAnswers: number[], nextIndex: number) => {
-      if (nextIndex < TOTAL_QUESTIONS) {
+      if (nextIndex < totalQuestions) {
         translateX.setValue(width);
         setCurrentIndex(nextIndex);
         setIsAnimating(false);
@@ -63,6 +76,11 @@ export default function QuizScreen({ navigation }: Props) {
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }).start();
+      } else if (partnerQuizOnly) {
+        const partner = determinePartnerFromQ4Q5(newAnswers[0], newAnswers[1]);
+        setSelectedPartner(partner);
+        setIsAnimating(false);
+        navigation.navigate('PartnerResult', { partner });
       } else {
         const partner = determinePartner(newAnswers);
         const score = calculateBrainScore(newAnswers);
@@ -72,7 +90,14 @@ export default function QuizScreen({ navigation }: Props) {
         navigation.navigate('PartnerResult', { partner });
       }
     },
-    [translateX, navigation, setSelectedPartner, setBrainScore]
+    [
+      translateX,
+      navigation,
+      setSelectedPartner,
+      setBrainScore,
+      totalQuestions,
+      partnerQuizOnly,
+    ],
   );
 
   const handleBack = useCallback(() => {
@@ -121,23 +146,25 @@ export default function QuizScreen({ navigation }: Props) {
     [isAnimating, answers, currentIndex, translateX, advanceQuestion]
   );
 
-  const currentQ = QUESTION_KEYS[currentIndex];
-  const progress = (currentIndex + 1) / TOTAL_QUESTIONS;
+  const currentQ = questionKeys[currentIndex];
+  const progress = (currentIndex + 1) / totalQuestions;
 
   return (
     <GradientBackground variant="quiz">
     <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <StatusBar barStyle={theme.statusBarStyle} backgroundColor="transparent" translucent />
 
       {/* ヘッダー */}
       <View style={styles.header}>
         <View style={styles.progressLabelRow}>
           <TouchableOpacity onPress={handleBack} style={styles.backBtn} activeOpacity={0.7}>
-            <Text style={[styles.backText, currentIndex === 0 && { opacity: 0 }]}>‹ 戻る</Text>
+            <Text style={[styles.backText, currentIndex === 0 && { opacity: 0 }]}>
+              ‹ {t('common.back')}
+            </Text>
           </TouchableOpacity>
           <Text style={styles.progressCount}>
             {currentIndex + 1}{' '}
-            <Text style={styles.progressTotal}>/ {TOTAL_QUESTIONS}</Text>
+            <Text style={styles.progressTotal}>/ {totalQuestions}</Text>
           </Text>
         </View>
         <View style={styles.progressBarBg}>

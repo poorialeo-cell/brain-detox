@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -9,16 +9,27 @@ import {
   ScrollView,
   Alert,
   Switch,
+  Platform,
+  Linking,
 } from 'react-native';
-import { useI18n, i18n } from '../hooks/useI18n';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import Constants from 'expo-constants';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useI18n } from '../hooks/useI18n';
 import { useAppStore } from '../store/useAppStore';
-import { Language, PartnerType } from '../types';
+import { Language, PartnerType, ReminderTime, RootStackParamList } from '../types';
 import {
   requestNotificationPermission,
-  scheduleDailyReminder,
+  scheduleDailyReminders,
   cancelAllNotifications,
   sendTestNotification,
 } from '../services/notificationService';
+import PartnerPortrait from '../components/PartnerPortrait';
+import { PARTNER_UI } from '../config/partnerUi';
+import { getPrivacyPolicyUrl, getTermsOfServiceUrl } from '../config/legalUrls';
+import { useTheme } from '../hooks/useTheme';
+import { useEffectiveBrainScore } from '../hooks/useEffectiveBrainScore';
 
 const PARTNER_CONFIG: Record<PartnerType, { emoji: string; color: string }> = {
   teacher:   { emoji: '🎯', color: '#f87171' },
@@ -35,24 +46,53 @@ const LANGUAGES: { code: Language; key: string; flag: string }[] = [
 
 export default function SettingsScreen() {
   const { t } = useI18n();
+  const theme = useTheme();
+  const navigation = useNavigation();
   const {
-    selectedPartner, language, brainScore,
-    notificationsEnabled, reminderHour, reminderMinute,
-    setLanguage, setOnboardingComplete, setSelectedPartner,
-    setNotificationsEnabled, setReminderTime, resetAll,
+    selectedPartner,
+    language,
+    notificationsEnabled,
+    reminderTimes,
+    themeName,
+    setOnboardingComplete,
+    setSelectedPartner,
+    setPartnerQuizOnly,
+    setNotificationsEnabled,
+    setReminderTimes,
   } = useAppStore();
+  const brainScore = useEffectiveBrainScore();
+  const [pickerTime, setPickerTime] = useState(() => {
+    const base = new Date();
+    base.setHours(21, 0, 0, 0);
+    return base;
+  });
 
   const partner = selectedPartner ?? 'counselor';
   const pc = PARTNER_CONFIG[partner];
 
-  const handleLanguageChange = (lang: Language) => {
-    setLanguage(lang);
-    i18n.changeLanguage(lang);
+  const currentLanguage = useMemo(
+    () => LANGUAGES.find((x) => x.code === language) ?? LANGUAGES[0],
+    [language],
+  );
+  const currentThemeLabel = useMemo(
+    () => t(`settings.theme${themeName.charAt(0).toUpperCase()}${themeName.slice(1)}`),
+    [t, themeName],
+  );
+  const sortedReminderTimes = useMemo(
+    () => [...reminderTimes].sort((a, b) => (a.hour * 60 + a.minute) - (b.hour * 60 + b.minute)),
+    [reminderTimes],
+  );
+
+  const formatTime = (hour: number, minute: number): string => {
+    const hh = String(hour).padStart(2, '0');
+    const mm = String(minute).padStart(2, '0');
+    return `${hh}:${mm}`;
   };
 
   const handleChangePartner = () => {
+    setPartnerQuizOnly(true);
     setOnboardingComplete(false);
-    setSelectedPartner(null as any);
+    setSelectedPartner(null);
   };
 
   const handleNotificationToggle = async (value: boolean) => {
@@ -62,59 +102,95 @@ export default function SettingsScreen() {
         Alert.alert('', t('notifications.permissionDenied'));
         return;
       }
+      const nextTimes = reminderTimes.length > 0 ? reminderTimes : [{ hour: 21, minute: 0 }];
+      if (reminderTimes.length === 0) {
+        setReminderTimes(nextTimes);
+      }
       setNotificationsEnabled(true);
-      await scheduleDailyReminder(reminderHour, reminderMinute, partner);
+      await scheduleDailyReminders(nextTimes, partner);
     } else {
       setNotificationsEnabled(false);
       await cancelAllNotifications();
     }
   };
 
-  const handleTimeSelect = async (hour: number) => {
-    setReminderTime(hour, 0);
+  const handlePickerChange = (_event: DateTimePickerEvent, date?: Date) => {
+    if (!date) return;
+    setPickerTime(date);
+  };
+
+  const handleAddReminderTime = async () => {
+    const pickerHour = pickerTime.getHours();
+    const pickerMinute = pickerTime.getMinutes();
+    const candidate: ReminderTime = { hour: pickerHour, minute: pickerMinute };
+    const key = `${candidate.hour}:${candidate.minute}`;
+    if (reminderTimes.some((time) => `${time.hour}:${time.minute}` === key)) return;
+    const nextTimes = [...reminderTimes, candidate].sort((a, b) => (a.hour * 60 + a.minute) - (b.hour * 60 + b.minute));
+    setReminderTimes(nextTimes);
     if (notificationsEnabled) {
-      await scheduleDailyReminder(hour, 0, partner);
+      await scheduleDailyReminders(nextTimes, partner);
+    }
+  };
+
+  const handleRemoveReminderTime = async (target: ReminderTime) => {
+    const nextTimes = reminderTimes.filter((time) => !(time.hour === target.hour && time.minute === target.minute));
+    setReminderTimes(nextTimes);
+    if (notificationsEnabled) {
+      await scheduleDailyReminders(nextTimes, partner);
     }
   };
 
   const handleReset = () => {
-    Alert.alert(
-      t('settings.resetConfirmTitle'),
-      t('settings.resetConfirmMessage'),
-      [
-        { text: t('settings.resetConfirmNo'), style: 'cancel' },
-        {
-          text: t('settings.resetConfirmYes'),
-          style: 'destructive',
-          onPress: () => {
-            resetAll();
-            i18n.changeLanguage('ja');
-          },
-        },
-      ]
-    );
+    const parent = navigation.getParent<NativeStackNavigationProp<RootStackParamList>>();
+    parent?.navigate('DataResetConfirm');
+  };
+
+  /** 外部ブラウザでリンクを開く（プライバシーポリシー・利用規約用） */
+  const openExternalUrl = async (url: string) => {
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (!supported) {
+        Alert.alert(t('settings.openLinkErrorTitle'), t('settings.openLinkErrorMessage'));
+        return;
+      }
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert(t('settings.openLinkErrorTitle'), t('settings.openLinkErrorMessage'));
+    }
+  };
+
+  const handleOpenPrivacyPolicy = () => {
+    void openExternalUrl(getPrivacyPolicyUrl(language));
+  };
+
+  const handleOpenTermsOfService = () => {
+    void openExternalUrl(getTermsOfServiceUrl(language));
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0d0d0d" />
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.appBg }]}>
+      <StatusBar barStyle={theme.statusBarStyle} backgroundColor={theme.colors.appBg} />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
         {/* ヘッダー */}
-        <Text style={styles.pageTitle}>{t('settings.title')}</Text>
+        <Text style={[styles.pageTitle, { color: theme.colors.text }]}>{t('settings.title')}</Text>
 
         {/* ── パートナーセクション ── */}
-        <Text style={styles.sectionLabel}>{t('settings.sectionPartner')}</Text>
-        <View style={styles.card}>
+        <Text style={[styles.sectionLabel, { color: theme.colors.textSubtle }]}>{t('settings.sectionPartner')}</Text>
+        <View style={[styles.card, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
 
           {/* 現在のパートナー表示 */}
           <View style={styles.partnerRow}>
-            <View style={[styles.partnerAvatar, { borderColor: pc.color + '66' }]}>
-              <Text style={styles.partnerAvatarEmoji}>{pc.emoji}</Text>
-            </View>
+            <PartnerPortrait
+              partner={partner}
+              pose="idle"
+              size={PARTNER_UI.settingsPortrait}
+              borderColor={pc.color}
+              borderWidth={3}
+            />
             <View style={styles.partnerInfo}>
-              <Text style={styles.partnerInfoLabel}>{t('settings.currentPartner')}</Text>
+              <Text style={[styles.partnerInfoLabel, { color: theme.colors.textSubtle }]}>{t('settings.currentPartner')}</Text>
               <Text style={[styles.partnerName, { color: pc.color }]}>
                 {t(`partner.${partner}.name`)}
               </Text>
@@ -124,79 +200,126 @@ export default function SettingsScreen() {
             </View>
           </View>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
 
           {/* パートナー変更ボタン */}
           <TouchableOpacity style={styles.rowButton} onPress={handleChangePartner} activeOpacity={0.7}>
             <View>
-              <Text style={styles.rowButtonTitle}>{t('settings.changePartner')}</Text>
-              <Text style={styles.rowButtonDesc}>{t('settings.changePartnerDesc')}</Text>
+              <Text style={[styles.rowButtonTitle, { color: theme.colors.text }]}>{t('settings.changePartner')}</Text>
+              <Text style={[styles.rowButtonDesc, { color: theme.colors.textSubtle }]}>{t('settings.changePartnerDesc')}</Text>
             </View>
-            <Text style={styles.rowButtonArrow}>›</Text>
+            <Text style={[styles.rowButtonArrow, { color: theme.colors.textSubtle }]}>›</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={[styles.sectionLabel, { color: theme.colors.textSubtle }]}>{t('settings.sectionTheme')}</Text>
+        <View style={[styles.card, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
+          <TouchableOpacity
+            style={styles.rowButton}
+            activeOpacity={0.75}
+            onPress={() => {
+              const parent = navigation.getParent<NativeStackNavigationProp<RootStackParamList>>();
+              parent?.navigate('ThemeSelect');
+            }}
+          >
+            <Text style={[styles.rowButtonTitle, { color: theme.colors.text }]}>{currentThemeLabel}</Text>
+            <Text style={[styles.rowButtonArrow, { color: theme.colors.textSubtle }]}>›</Text>
           </TouchableOpacity>
         </View>
 
         {/* ── 言語セクション ── */}
-        <Text style={styles.sectionLabel}>{t('settings.sectionLanguage')}</Text>
-        <View style={styles.card}>
-          {LANGUAGES.map((lang, idx) => (
-            <View key={lang.code}>
-              <TouchableOpacity
-                style={styles.langRow}
-                onPress={() => handleLanguageChange(lang.code)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.langFlag}>{lang.flag}</Text>
-                <Text style={styles.langLabel}>{t(lang.key)}</Text>
-                <View style={[
-                  styles.radioOuter,
-                  language === lang.code && styles.radioOuterActive,
-                ]}>
-                  {language === lang.code && <View style={styles.radioInner} />}
-                </View>
-              </TouchableOpacity>
-              {idx < LANGUAGES.length - 1 && <View style={styles.divider} />}
-            </View>
-          ))}
+        <Text style={[styles.sectionLabel, { color: theme.colors.textSubtle }]}>{t('settings.sectionLanguage')}</Text>
+        <View style={[styles.card, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
+          <TouchableOpacity
+            style={styles.langRow}
+            onPress={() => {
+              const parent = navigation.getParent<NativeStackNavigationProp<RootStackParamList>>();
+              parent?.navigate('LanguageSelect');
+            }}
+            activeOpacity={0.75}
+          >
+            <Text style={styles.langFlag}>{currentLanguage.flag}</Text>
+            <Text style={[styles.langLabel, { color: theme.colors.text }]}>{t(currentLanguage.key)}</Text>
+            <Text style={[styles.rowButtonArrow, { color: theme.colors.textSubtle }]}>›</Text>
+          </TouchableOpacity>
         </View>
 
         {/* ── 通知セクション ── */}
-        <Text style={styles.sectionLabel}>{t('notifications.sectionTitle')}</Text>
-        <View style={styles.card}>
+        <Text style={[styles.sectionLabel, { color: theme.colors.textSubtle }]}>{t('notifications.sectionTitle')}</Text>
+        <View style={[styles.card, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
           {/* 通知オン/オフ */}
           <View style={styles.switchRow}>
-            <Text style={styles.rowButtonTitle}>{t('notifications.enableToggle')}</Text>
+            <Text style={[styles.rowButtonTitle, { color: theme.colors.text }]}>{t('notifications.enableToggle')}</Text>
             <Switch
               value={notificationsEnabled}
               onValueChange={handleNotificationToggle}
-              trackColor={{ false: '#333', true: '#a78bfa' }}
-              thumbColor={notificationsEnabled ? '#fff' : '#666'}
+              trackColor={{ false: theme.colors.border, true: theme.colors.accent }}
+              thumbColor={notificationsEnabled ? '#fff' : theme.colors.textSubtle}
             />
           </View>
 
           {notificationsEnabled && (
             <>
-              <View style={styles.divider} />
+              <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
               {/* リマインド時間選択 */}
               <View style={styles.timeSectionInner}>
-                <Text style={styles.timeLabel}>{t('notifications.reminderTime')}</Text>
+                <Text style={[styles.timeLabel, { color: theme.colors.textSubtle }]}>{t('notifications.reminderTime')}</Text>
                 <View style={styles.timeGrid}>
-                  {[18, 19, 20, 21, 22, 23].map((h) => (
-                    <TouchableOpacity
-                      key={h}
-                      style={[styles.timeChip, reminderHour === h && styles.timeChipActive]}
-                      onPress={() => handleTimeSelect(h)}
-                      activeOpacity={0.7}
+                  {sortedReminderTimes.map((time) => (
+                    <View
+                      key={`${time.hour}:${time.minute}`}
+                      style={[styles.timeChip, { backgroundColor: theme.colors.cardAlt, borderColor: theme.colors.border }]}
                     >
-                      <Text style={[styles.timeChipText, reminderHour === h && styles.timeChipTextActive]}>
-                        {h}:00
+                      <Text style={[styles.timeChipText, { color: theme.colors.textMuted }]}>
+                        {formatTime(time.hour, time.minute)}
                       </Text>
-                    </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => handleRemoveReminderTime(time)}
+                        hitSlop={8}
+                        style={styles.timeChipRemoveButton}
+                      >
+                        <Text style={[styles.timeChipRemoveText, { color: theme.colors.textSubtle }]}>✕</Text>
+                      </TouchableOpacity>
+                    </View>
                   ))}
+                  {sortedReminderTimes.length === 0 ? (
+                    <Text style={[styles.emptyReminderText, { color: theme.colors.textSubtle }]}>
+                      {t('notifications.noReminderTimes')}
+                    </Text>
+                  ) : null}
                 </View>
+
+                <View style={[styles.wheelPickerCard, { backgroundColor: theme.colors.cardAlt, borderColor: theme.colors.border }]}>
+                  <DateTimePicker
+                    style={styles.wheelPicker}
+                    value={pickerTime}
+                    mode="time"
+                    display="spinner"
+                    is24Hour
+                    onChange={handlePickerChange}
+                    {...(Platform.OS === 'ios'
+                      ? {
+                        textColor: theme.colors.text,
+                        themeVariant: theme.id === 'white' ? 'light' : 'dark' as const,
+                      }
+                      : {})}
+                  />
+                </View>
+
+                <TouchableOpacity
+                  style={[styles.addReminderBtn, { backgroundColor: theme.colors.accentSoft, borderColor: theme.colors.accent }]}
+                  onPress={handleAddReminderTime}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.addReminderBtnText, { color: theme.colors.accentText }]}>
+                    {t('notifications.addReminderTime', {
+                      time: formatTime(pickerTime.getHours(), pickerTime.getMinutes()),
+                    })}
+                  </Text>
+                </TouchableOpacity>
               </View>
 
-              <View style={styles.divider} />
+              <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
 
               {/* テスト送信 */}
               <TouchableOpacity
@@ -204,27 +327,49 @@ export default function SettingsScreen() {
                 onPress={() => sendTestNotification(partner)}
                 activeOpacity={0.7}
               >
-                <Text style={styles.rowButtonTitle}>{t('notifications.testButton')}</Text>
-                <Text style={styles.rowButtonArrow}>›</Text>
+                <Text style={[styles.rowButtonTitle, { color: theme.colors.text }]}>{t('notifications.testButton')}</Text>
+                <Text style={[styles.rowButtonArrow, { color: theme.colors.textSubtle }]}>›</Text>
               </TouchableOpacity>
             </>
           )}
         </View>
 
         {/* ── データ管理セクション ── */}
-        <Text style={styles.sectionLabel}>{t('settings.sectionData')}</Text>
-        <View style={styles.card}>
+        <Text style={[styles.sectionLabel, { color: theme.colors.textSubtle }]}>{t('settings.sectionData')}</Text>
+        <View style={[styles.card, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
           <TouchableOpacity style={styles.rowButton} onPress={handleReset} activeOpacity={0.7}>
             <View>
               <Text style={[styles.rowButtonTitle, { color: '#f87171' }]}>{t('settings.resetData')}</Text>
-              <Text style={styles.rowButtonDesc}>{t('settings.resetDataDesc')}</Text>
+              <Text style={[styles.rowButtonDesc, { color: theme.colors.textSubtle }]}>{t('settings.resetDataDesc')}</Text>
             </View>
             <Text style={[styles.rowButtonArrow, { color: '#f87171' }]}>›</Text>
           </TouchableOpacity>
         </View>
 
+        {/* ── アプリ情報セクション ── */}
+        <Text style={[styles.sectionLabel, { color: theme.colors.textSubtle }]}>{t('settings.sectionAbout')}</Text>
+        <View style={[styles.card, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
+          <TouchableOpacity style={styles.rowButton} onPress={handleOpenPrivacyPolicy} activeOpacity={0.7}>
+            <View>
+              <Text style={[styles.rowButtonTitle, { color: theme.colors.text }]}>{t('settings.privacyPolicy')}</Text>
+              <Text style={[styles.rowButtonDesc, { color: theme.colors.textSubtle }]}>{t('settings.privacyPolicyDesc')}</Text>
+            </View>
+            <Text style={[styles.rowButtonArrow, { color: theme.colors.textSubtle }]}>›</Text>
+          </TouchableOpacity>
+          <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
+          <TouchableOpacity style={styles.rowButton} onPress={handleOpenTermsOfService} activeOpacity={0.7}>
+            <View>
+              <Text style={[styles.rowButtonTitle, { color: theme.colors.text }]}>{t('settings.termsOfService')}</Text>
+              <Text style={[styles.rowButtonDesc, { color: theme.colors.textSubtle }]}>{t('settings.termsOfServiceDesc')}</Text>
+            </View>
+            <Text style={[styles.rowButtonArrow, { color: theme.colors.textSubtle }]}>›</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* バージョン情報 */}
-        <Text style={styles.version}>{t('settings.version')} 0.1.0</Text>
+        <Text style={[styles.version, { color: theme.colors.textSubtle }]}>
+          {t('settings.version')} {Constants.expoConfig?.version ?? '1.0.0'}
+        </Text>
 
       </ScrollView>
     </SafeAreaView>
@@ -267,14 +412,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 18,
-    gap: 14,
+    gap: 16,
   },
-  partnerAvatar: {
-    width: 52, height: 52, borderRadius: 26,
-    backgroundColor: '#1a1a1a', borderWidth: 2,
-    justifyContent: 'center', alignItems: 'center',
-  },
-  partnerAvatarEmoji: { fontSize: 24 },
   partnerInfo: { flex: 1 },
   partnerInfoLabel: { fontSize: 11, color: '#555', fontWeight: '600', letterSpacing: 1, marginBottom: 3 },
   partnerName: { fontSize: 22, fontWeight: '800' },
@@ -348,6 +487,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   timeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
@@ -355,16 +497,43 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#333',
   },
-  timeChipActive: {
-    backgroundColor: '#1e1433',
-    borderColor: '#a78bfa',
-  },
   timeChipText: {
     fontSize: 14,
     fontWeight: '600',
     color: '#666',
   },
-  timeChipTextActive: {
-    color: '#a78bfa',
+  timeChipRemoveButton: {
+    paddingLeft: 2,
+  },
+  timeChipRemoveText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  emptyReminderText: {
+    fontSize: 12,
+    fontWeight: '500',
+    lineHeight: 18,
+  },
+  wheelPickerCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    overflow: 'hidden',
+  },
+  wheelPicker: {
+    width: '100%',
+    height: 180,
+  },
+  addReminderBtn: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 11,
+    paddingHorizontal: 14,
+    alignItems: 'center',
+  },
+  addReminderBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
   },
 });

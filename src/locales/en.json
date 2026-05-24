@@ -5,6 +5,17 @@
     "loading": "Loading...",
     "error": "Something went wrong"
   },
+  "splash": {
+    "tagline": "Brain rot ends today."
+  },
+  "timer": {
+    "title": "Timer",
+    "subtitle": "Track your focus time ⏱️",
+    "complete": "Time's up!",
+    "pause": "Pause",
+    "resume": "Resume",
+    "finish": "Done & Next"
+  },
   "badges": {
     "sectionTitle": "Achievements",
     "tabBadges": "Badges",
@@ -80,7 +91,51 @@
     "resultNeutral": "Normal state.",
     "resultNegative": "Recovery needed. Take an action to bounce back.",
     "scoreDelta": "Score has changed",
-    "continueButton": "Continue"
+    "continueButton": "Continue",
+    "limitTitle": "Test unavailable right now",
+    "limitDaily": "You can take this check up to 2 times per day. Try again after midnight or tomorrow.",
+    "limitCooldown": "Wait at least 6 hours since your last check. Next session: after {{time}}.",
+    "limitDismiss": "Close",
+    "vibe": {
+      "title": "2-min Vibe Check",
+      "timeLeft": "{{sec}}s left",
+      "combo": "Combo ×{{n}}",
+      "synapseLen": "Chain {{n}}",
+      "phase": {
+        "colorTitle": "① Color Swerve (inhibition)",
+        "colorHint": "Tap the color button that matches the INK color of the word—not the word you read.",
+        "synapseTitle": "② Synapse Match (working memory)",
+        "synapseHint": "Watch the rhythm, remember the icon order, then tap the same order.",
+        "synapseRecall": "Now tap the same order!",
+        "focusTitle": "③ Focus Shield (sustain)",
+        "focusHint": "Ignore flying pings and memes—keep pressing the brain in the center.",
+        "focusHold": "Hold to focus"
+      },
+      "colors": {
+        "red": "RED",
+        "blue": "BLUE",
+        "green": "GREEN",
+        "yellow": "YELLOW"
+      },
+      "survey": {
+        "question": "How much short video did you watch today?",
+        "a0": "Almost none",
+        "a1": "Under 30 minutes",
+        "a2": "30 min – 2 hours",
+        "a3": "2–4 hours",
+        "a4": "4+ hours"
+      },
+      "distractors": {
+        "d0": "🔔 New likes",
+        "d1": "💬 New DM",
+        "d2": "⚡ Flash sale",
+        "d3": "🧂",
+        "d4": "👁️👄👁️",
+        "d5": "🫠",
+        "d6": "🔥 Tap for more",
+        "d7": "📦 Out for delivery"
+      }
+    }
   },
   "breathing": {
     "inhale": "Inhale",
@@ -88,13 +143,16 @@
     "exhale": "Exhale",
     "cycleOf": "/ {{total}} cycles",
     "complete": "Complete!",
-    "ready": "Tap when ready"
+    "ready": "Tap when ready",
+    "cycleComplete": "Set complete"
   },
-  "timer": {
-    "complete": "Time's up!",
-    "pause": "Pause",
-    "resume": "Resume",
-    "finish": "Done & Next"
+  "guide": {
+    "cancel": "Cancel",
+    "timerExtendQuestion": "Time is up. Still going? Add time or finish and log your actual duration.",
+    "extendMinutes": "+{{n}} min",
+    "finishWithElapsed": "Finish with this time",
+    "breathingContinueQuestion": "Breathing set finished. Keep going a bit more?",
+    "breathingAddCycles": "Add {{n}} more cycles"
   },
   "nav": {
     "home": "Home",
@@ -109,9 +167,26 @@
     "statsAverage": "Average",
     "statsActions": "Actions Done",
     "chartLabel": "Progress Over Time",
+    "chartRangeDay": "Day",
+    "chartRangeWeek": "Week",
+    "chartRangeMonth": "Month",
+    "chartRangeAll": "All",
+    "chartNeedsMore": "Need at least one more record to draw the chart. Use the calendar to see your activity.",
     "recentLabel": "Recent Records",
+    "gainedLabel": "Gained",
+    "labelTotalScore": "After",
     "today": "Today",
-    "yesterday": "Yesterday"
+    "yesterday": "Yesterday",
+    "hintScoreDot": "This dot’s color is a quick cue for your brain score band when the entry was logged: green is stronger, purple mid-range, yellow caution, red lower. The exact numbers are on the right.",
+    "flipToCalendar": "Show calendar",
+    "flipToChart": "Show chart",
+    "rowBrainRotTest": "Brain rot check-in",
+    "dayDetailTitle": "Activity on this day",
+    "entryKindAction": "Action completed",
+    "entryKindTest": "Brain rot check-in",
+    "entryScoreAfter": "Score after entry",
+    "entryXp": "+{{xp}} XP",
+    "entryGain": "Score change: {{n}}"
   },
   "quiz": {
     "title": "Find Your Type",
@@ -179,47 +254,69 @@
   },
   "home": {
     "title": "YOUR BRAIN",
+    "brainMonitorTitle": "Brain Monitor",
+    "yourPartnerTitle": "Your Partner",
+    "yourBrain": "Your Brain",
+    "partnerMessageLoading": "Preparing your message…",
     "scoreLabel": "Brain Score",
     "level1": "Brain Rot",
     "level2": "Warning",
     "level3": "Stable",
     "level4": "Flourishing",
     "level5": "Transcendent",
+    "statusHealthy": "Healthy",
+    "statusWarning": "Caution",
+    "statusCritical": "Recovery Needed",
     "actionButton": "Get Recovery Action Now",
     "partnerGreeting": {
       "teacher": "Don't get comfortable. Today demands action.",
       "counselor": "Good to see you again. Let's take it one step at a time.",
       "scientist": "Data reviewed. Let me suggest today's optimal action.",
       "trainer": "Let's go! Full throttle today!"
+    },
+    "hints": {
+      "level": "Resonance level (Lv) rises from total XP you've earned. Completing actions adds XP, and your title reflects your current level.",
+      "streak": "This counts consecutive days with at least one completed action. A longer streak boosts score gains when you complete actions; if you miss a day, it resets to 0.",
+      "score": "Brain score (0–100) reflects your current brain condition. It rises when you complete actions or tests, and may slowly decrease if you're away for a while.",
+      "state": "This label describes your score band. It matches the brain artwork and how your partner reacts on the home screen."
     }
   },
   "action": {
     "title": "Action Proposal",
+    "planProgress": "Action plan {{current}}/{{total}} (~{{minutes}} min total)",
+    "offlineMode": "📡 Offline mode",
     "generating": "Your partner is thinking...",
     "completeButton": "Done!",
     "skipButton": "Skip",
     "nextButton": "Get Next Action",
     "homeButton": "Go Home",
     "feedbackTitle": "Action Complete!",
-    "feedbackScore": "+5pt",
+    "feedbackPartnerLine": "From your partner",
+    "feedbackScore": "+{{points}}pt",
     "feedbackCongrats": {
       "teacher": "Good. That's how it's done. Don't slack on the next one.",
       "counselor": "You did so well. I'm really proud of you.",
       "scientist": "Action completed. Changes are occurring in your brain.",
       "trainer": "AMAZING!! Keep that energy going!!"
     },
-    "reactionLabel": "How was it?",
+    "reactionLabel": "How did the action feel?",
     "reactionGreat": "Great",
     "reactionOk": "Okay",
     "reactionHard": "Tough",
     "difficulty": {"easy": "Easy", "medium": "Medium", "hard": "Hard"},
+    "feedbackBrainHomeButton": "Check your brain on Home",
     "startGuide": "Start Guide ✨",
-    "guideSkip": "Skip & Complete"
+    "guideSkip": "Skip & Complete",
+    "offlineFallbackButton": "Run in offline mode"
   },
   "notifications": {
     "sectionTitle": "Notifications",
     "enableToggle": "Enable Notifications",
-    "reminderTime": "Daily Reminder Time",
+    "reminderTime": "Daily Reminder Times",
+    "noReminderTimes": "No reminder times yet",
+    "hourLabel": "Hour",
+    "minuteLabel": "Minute",
+    "addReminderTime": "Add reminder at {{time}}",
     "testButton": "Send Test Notification",
     "permissionDenied": "Please enable notifications in Settings",
     "daily": {
@@ -239,7 +336,9 @@
       "counselor": "Your score is dropping... Are you okay? Let's recover together.",
       "scientist": "Brain score has fallen below critical threshold. Immediate intervention required.",
       "trainer": "Score is in trouble! But you got this! Turn it around RIGHT NOW!!"
-    }
+    },
+    "timerFinishedTitle": "{{partner}} — Timer finished",
+    "timerFinishedBody": "Time's up for \"{{title}}\". Open the app to finish logging your session."
   },
   "settings": {
     "title": "Settings",
@@ -247,6 +346,13 @@
     "currentPartner": "Current Partner",
     "changePartner": "Change Partner",
     "changePartnerDesc": "Retake the quiz to get a new partner",
+    "sectionTheme": "Theme",
+    "themeDark": "Dark",
+    "themeWhite": "White",
+    "themeGreen": "Green",
+    "themeBlue": "Blue",
+    "themeOrange": "Orange",
+    "themeRed": "Red",
     "sectionLanguage": "Language",
     "langJa": "日本語",
     "langEn": "English",
@@ -258,6 +364,19 @@
     "resetConfirmMessage": "All data (score, partner, progress) will be deleted. This cannot be undone.",
     "resetConfirmYes": "Reset",
     "resetConfirmNo": "Cancel",
-    "version": "Version"
+    "resetSecondTitle": "Before you delete everything",
+    "resetSecondIntro": "If you continue, all data stored in this app on your device will be removed. This cannot be undone.",
+    "resetSecondBullets": "• Brain score, XP, level, and streak\n• Score history (actions and check-ins)\n• Partner choice and onboarding progress (you'll start fresh)\n• Badge progress\n• Action suggestion history (recommendation bias reset)",
+    "resetAckLabel": "I understand and agree to delete all of this data",
+    "resetSecondBack": "Back to settings",
+    "resetExecute": "Erase everything and start over",
+    "version": "Version",
+    "sectionAbout": "About",
+    "privacyPolicy": "Privacy Policy",
+    "privacyPolicyDesc": "How we handle your personal data",
+    "termsOfService": "Terms of Service",
+    "termsOfServiceDesc": "Terms and conditions for using the App",
+    "openLinkErrorTitle": "Cannot open link",
+    "openLinkErrorMessage": "Failed to open browser. Please check your network connection."
   }
 }

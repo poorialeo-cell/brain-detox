@@ -1,8 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, Animated, Easing, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useI18n } from '../hooks/useI18n';
 
 export default function SplashLoader() {
+  const { t } = useI18n();
   const logoScale   = useRef(new Animated.Value(0.7)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const titleY      = useRef(new Animated.Value(20)).current;
@@ -21,16 +23,21 @@ export default function SplashLoader() {
       ]),
     ]).start();
 
-    dots.forEach((dot, i) => {
-      Animated.loop(
+    const loops = dots.map((dot, i) => {
+      const loop = Animated.loop(
         Animated.sequence([
           Animated.delay(i * 180),
           Animated.timing(dot, { toValue: 1,   duration: 380, useNativeDriver: true }),
           Animated.timing(dot, { toValue: 0.2, duration: 380, useNativeDriver: true }),
           Animated.delay(540 - i * 180),
         ])
-      ).start();
+      );
+      loop.start();
+      return loop;
     });
+    return () => {
+      loops.forEach((l) => l.stop());
+    };
   }, []);
 
   return (
@@ -46,7 +53,7 @@ export default function SplashLoader() {
       {/* タイトル */}
       <Animated.View style={{ opacity: titleOp, transform: [{ translateY: titleY }], alignItems: 'center', gap: 6 }}>
         <Text style={styles.title}>brain detox</Text>
-        <Text style={styles.subtitle}>ブレインロット、今日から終わり。</Text>
+        <Text style={styles.subtitle}>{t('splash.tagline')}</Text>
       </Animated.View>
 
       {/* ローディングドット */}

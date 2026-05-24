@@ -1,5 +1,76 @@
-import { PartnerType, Language, ActionSuggestion, InteractiveType } from '../types';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
+import app, { auth } from '../config/firebase';
+import { PartnerType, Language, ActionSuggestion, ScoreEntry } from '../types';
 import { ActionDifficulty } from '../config/scoringConfig';
+import { getActionBaseById, ActionBaseDefinition, ACTION_BASES } from '../data/actionBases';
+import { buildOfflineActionFromBase, buildOfflineActionFromBaseSafe } from './buildOfflineAction';
+import {
+  buildOfflineActionPlanSteps,
+  PLAN_TARGET_SECONDS,
+} from './actionPlanService';
+
+// ─── Firebase Functions プロキシ ─────────────────────────────────────────
+const functions = getFunctions(app, 'asia-northeast1');
+const _proxyCallable = httpsCallable<
+  { messages: { role: string; content: string }[]; max_tokens?: number; temperature?: number; json_mode?: boolean },
+  { content: string }
+>(functions, 'openaiProxy');
+
+/** Firebase Auth の復元を待ち、それでも未認証なら匿名サインインする */
+async function waitForAuth(): Promise<void> {
+  if (auth.currentUser) return;
+  // onAuthStateChanged の初回発火（null or User）を待つ（最大 5 秒）
+  await new Promise<void>((resolve) => {
+    let unsub: (() => void) | null = null;
+    const finish = () => {
+      if (unsub) { unsub(); unsub = null; }
+      clearTimeout(timeout);
+      resolve();
+    };
+    const timeout = setTimeout(finish, 5000);
+    unsub = onAuthStateChanged(auth, () => finish());
+  });
+  if (!auth.currentUser) {
+    try {
+      await signInAnonymously(auth);
+    } catch (e) {
+      if (__DEV__) console.warn('[Auth] waitForAuth: 匿名サインイン失敗', e);
+    }
+  }
+}
+
+/**
+ * Firebase Functions 経由で OpenAI を呼び出す共通ヘルパー。
+ * API キーはサーバー側のみに存在し、クライアントには渡らない。
+ */
+/** サーバー側のレート制限超過時に投げられる識別可能なエラー */
+export class RateLimitError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'RateLimitError';
+  }
+}
+
+async function callProxy(
+  messages: { role: 'system' | 'user' | 'assistant'; content: string }[],
+  opts: { max_tokens?: number; temperature?: number; json_mode?: boolean } = {},
+): Promise<string> {
+  await waitForAuth();
+  try {
+    const result = await _proxyCallable({ messages, ...opts });
+    const content = result.data.content;
+    if (!content) throw new Error('Empty response from proxy');
+    return content;
+  } catch (e: unknown) {
+    // Firebase callable は { code, message, details } 形式のエラーを返す
+    const err = e as { code?: string; message?: string };
+    if (err?.code === 'functions/resource-exhausted' || err?.code === 'resource-exhausted') {
+      throw new RateLimitError(err.message ?? 'レート制限に達しました');
+    }
+    throw e;
+  }
+}
 
 // ─── システムプロンプト（パートナー × 言語） ──────────────────────────
 const SYSTEM_PROMPTS: Record<PartnerType, Record<Language, string>> = {
@@ -61,192 +132,177 @@ Constraint: Suggest exactly ONE physical or energy-releasing action. Keep the en
   },
 };
 
-// ─── オフライン用フォールバックアクション ─────────────────────────────
-const FALLBACK_ACTIONS: Record<PartnerType, Record<Language, ActionSuggestion[]>> = {
-  teacher: {
-    ja: [
-      { title: '即席スクワット', description: '今すぐ椅子から立ち、20回スクワットをしろ。身体を動かせば脳が覚醒する。', duration: '2分', difficulty: 'easy' as ActionDifficulty, interactiveType: 'none' as InteractiveType, partnerMessage: '言い訳は聞かない。今すぐやれ。', isOffline: true },
-      { title: '冷水洗顔', description: '洗面所へ行き、冷水で顔を3回洗え。前頭前野を物理的に刺激する最速の方法だ。', duration: '1分', difficulty: 'easy' as ActionDifficulty, interactiveType: 'timer' as InteractiveType, timerConfig: { durationSeconds: 60 }, partnerMessage: '逃げるな。身体に喝を入れろ。', isOffline: true },
-      { title: '5分読書', description: '本を1冊手に取り、5分間だけ読め。それだけでいい。集中力の筋肉を今すぐ鍛えろ。', duration: '5分', difficulty: 'medium' as ActionDifficulty, interactiveType: 'timer' as InteractiveType, timerConfig: { durationSeconds: 300 }, partnerMessage: 'ショート動画の代わりに活字を入れろ。', isOffline: true },
-    ],
-    en: [
-      { title: 'Drop & Squat', description: 'Stand up right now and do 20 squats.', duration: '2 min', difficulty: 'easy' as ActionDifficulty, interactiveType: 'none' as InteractiveType, partnerMessage: "No excuses. Do it now.", isOffline: true },
-      { title: 'Cold Water Face Wash', description: 'Go to the sink and wash your face with cold water 3 times.', duration: '1 min', difficulty: 'easy' as ActionDifficulty, interactiveType: 'timer' as InteractiveType, timerConfig: { durationSeconds: 60 }, partnerMessage: "Don't run. Wake your body up.", isOffline: true },
-      { title: '5-Min Reading', description: 'Pick up a book and read for just 5 minutes.', duration: '5 min', difficulty: 'medium' as ActionDifficulty, interactiveType: 'timer' as InteractiveType, timerConfig: { durationSeconds: 300 }, partnerMessage: 'Replace short videos with words.', isOffline: true },
-    ],
-    th: [
-      { title: 'สควอท 20 ครั้ง', description: 'ลุกขึ้นยืนทันทีแล้วทำสควอท 20 ครั้ง', duration: '2 นาที', difficulty: 'easy' as ActionDifficulty, interactiveType: 'none' as InteractiveType, partnerMessage: 'ไม่มีข้อแก้ตัว ทำเดี๋ยวนี้', isOffline: true },
-    ],
-  },
-  counselor: {
-    ja: [
-      { title: '4-8呼吸法', description: '目を閉じて、鼻から4秒吸って8秒かけて吐く。これを5回繰り返してみよう。ゆっくりでいい。', duration: '3分', difficulty: 'easy' as ActionDifficulty, interactiveType: 'breathing' as InteractiveType, breathingConfig: { inhaleSeconds: 4, holdSeconds: 0, exhaleSeconds: 8, cycles: 5 }, partnerMessage: '焦らなくていい。まず息を整えよう。', isOffline: true },
-      { title: '一行日記', description: '今日感じたことを一行だけ書いてみよう。「疲れた」でも「楽しかった」でもいい。自分を知る第一歩。', duration: '3分', difficulty: 'easy' as ActionDifficulty, interactiveType: 'none' as InteractiveType, partnerMessage: '小さな一歩でいい。あなたのペースで。', isOffline: true },
-      { title: '温かい飲み物タイム', description: '温かいお茶やコーヒーをゆっくり淹れて飲もう。五感に意識を向けると脳がリセットされるよ。', duration: '5分', difficulty: 'medium' as ActionDifficulty, interactiveType: 'timer' as InteractiveType, timerConfig: { durationSeconds: 300 }, partnerMessage: '自分を大切にすることも立派な回復だよ。', isOffline: true },
-    ],
-    en: [
-      { title: '4-8 Breathing', description: "Close your eyes and breathe in for 4 seconds, out for 8. Try it 5 times.", duration: '3 min', difficulty: 'easy' as ActionDifficulty, interactiveType: 'breathing' as InteractiveType, breathingConfig: { inhaleSeconds: 4, holdSeconds: 0, exhaleSeconds: 8, cycles: 5 }, partnerMessage: "No rush. Let's calm your breathing first.", isOffline: true },
-      { title: 'One-Line Journal', description: "Write just one line about how you're feeling today.", duration: '3 min', difficulty: 'easy' as ActionDifficulty, interactiveType: 'none' as InteractiveType, partnerMessage: "One small step is enough. At your own pace.", isOffline: true },
-      { title: 'Warm Drink Moment', description: 'Make a warm tea or coffee and drink it slowly.', duration: '5 min', difficulty: 'medium' as ActionDifficulty, interactiveType: 'timer' as InteractiveType, timerConfig: { durationSeconds: 300 }, partnerMessage: 'Taking care of yourself is real recovery too.', isOffline: true },
-    ],
-    th: [
-      { title: 'หายใจ 4-8', description: 'หลับตาแล้วหายใจเข้า 4 วินาที ออก 8 วินาที ทำ 5 ครั้ง', duration: '3 นาที', difficulty: 'easy' as ActionDifficulty, interactiveType: 'breathing' as InteractiveType, breathingConfig: { inhaleSeconds: 4, holdSeconds: 0, exhaleSeconds: 8, cycles: 5 }, partnerMessage: 'ไม่ต้องรีบ มาจัดการลมหายใจก่อนนะ', isOffline: true },
-    ],
-  },
-  scientist: {
-    ja: [
-      { title: '20-20-20ルール', description: 'スクリーンから目を離し、6m先を20秒間見よ。視覚野の疲労を軽減し、注意力が回復する（米眼科学会推奨）。', duration: '1分', difficulty: 'easy' as ActionDifficulty, interactiveType: 'timer' as InteractiveType, timerConfig: { durationSeconds: 20 }, partnerMessage: '神経科学的に証明された手法だ。実行せよ。', isOffline: true },
-      { title: '10分ウォーキング', description: '10分間の早歩きを実施せよ。有酸素運動はBDNF（脳由来神経栄養因子）を増加させ、依存の衝動を抑制する。', duration: '10分', difficulty: 'hard' as ActionDifficulty, interactiveType: 'timer' as InteractiveType, timerConfig: { durationSeconds: 600 }, partnerMessage: 'データは明確だ。運動がドーパミン系を整える。', isOffline: true },
-      { title: '5感マインドフルネス', description: '周囲の音を5つ特定し、各々に3秒意識を向けよ。デフォルトモードネットワークをリセットする効果がある。', duration: '3分', difficulty: 'medium' as ActionDifficulty, interactiveType: 'breathing' as InteractiveType, breathingConfig: { inhaleSeconds: 3, holdSeconds: 0, exhaleSeconds: 3, cycles: 5 }, partnerMessage: '前頭前野の活性化を促す。今すぐ実行。', isOffline: true },
-    ],
-    en: [
-      { title: '20-20-20 Rule', description: 'Look away from screens at something 20 feet away for 20 seconds.', duration: '1 min', difficulty: 'easy' as ActionDifficulty, interactiveType: 'timer' as InteractiveType, timerConfig: { durationSeconds: 20 }, partnerMessage: 'Scientifically validated. Execute it.', isOffline: true },
-      { title: '10-Min Walk', description: 'Walk briskly for 10 minutes. Aerobic exercise increases BDNF and suppresses addictive impulses.', duration: '10 min', difficulty: 'hard' as ActionDifficulty, interactiveType: 'timer' as InteractiveType, timerConfig: { durationSeconds: 600 }, partnerMessage: 'The data is clear. Exercise regulates dopamine.', isOffline: true },
-      { title: '5-Sense Mindfulness', description: 'Identify 5 sounds around you and focus on each for 3 seconds.', duration: '3 min', difficulty: 'medium' as ActionDifficulty, interactiveType: 'breathing' as InteractiveType, breathingConfig: { inhaleSeconds: 3, holdSeconds: 0, exhaleSeconds: 3, cycles: 5 }, partnerMessage: 'Activates prefrontal cortex. Do it now.', isOffline: true },
-    ],
-    th: [
-      { title: 'กฎ 20-20-20', description: 'มองออกไป 6 เมตร เป็นเวลา 20 วินาที', duration: '1 นาที', difficulty: 'easy' as ActionDifficulty, interactiveType: 'timer' as InteractiveType, timerConfig: { durationSeconds: 20 }, partnerMessage: 'มีการพิสูจน์ทางวิทยาศาสตร์แล้ว ปฏิบัติได้เลย', isOffline: true },
-    ],
-  },
-  trainer: {
-    ja: [
-      { title: 'バーピー10回', description: '今すぐバーピー10回！腕立て伏せ→立ち上がり→ジャンプ。心拍数を一気に上げてドーパミンを叩き出せ！', duration: '2分', difficulty: 'medium' as ActionDifficulty, interactiveType: 'none' as InteractiveType, partnerMessage: 'よっしゃ！一緒に燃えよう！やれるぞ！', isOffline: true },
-      { title: '外に飛び出せ', description: '靴を履いて外に出ろ！5分間でいい。太陽光でセロトニンをチャージだ！スマホは部屋に置いていけ！', duration: '5分', difficulty: 'medium' as ActionDifficulty, interactiveType: 'timer' as InteractiveType, timerConfig: { durationSeconds: 300 }, partnerMessage: '動いた分だけ脳が輝く！行ってこい！', isOffline: true },
-      { title: 'シャドーボクシング', description: '立ち上がってシャドーボクシング1分間！全力でパンチを打て！フラストレーションを全部燃やし尽くせ！', duration: '1分', difficulty: 'easy' as ActionDifficulty, interactiveType: 'timer' as InteractiveType, timerConfig: { durationSeconds: 60 }, partnerMessage: '感情を全部エネルギーに変えろ！燃えてこい！', isOffline: true },
-    ],
-    en: [
-      { title: '10 Burpees NOW', description: "10 burpees right now! Push-up → stand → jump. Spike your heart rate!", duration: '2 min', difficulty: 'medium' as ActionDifficulty, interactiveType: 'none' as InteractiveType, partnerMessage: "Let's go! Burn together! You got this!", isOffline: true },
-      { title: 'Get Outside', description: 'Put on your shoes and get outside for 5 minutes! Charge up your serotonin!', duration: '5 min', difficulty: 'medium' as ActionDifficulty, interactiveType: 'timer' as InteractiveType, timerConfig: { durationSeconds: 300 }, partnerMessage: 'Every step makes your brain shine! GO!', isOffline: true },
-      { title: 'Shadow Boxing', description: 'Stand up and shadow box for 1 minute! Full power punches!', duration: '1 min', difficulty: 'easy' as ActionDifficulty, interactiveType: 'timer' as InteractiveType, timerConfig: { durationSeconds: 60 }, partnerMessage: 'Turn all that emotion into fuel! BURN!', isOffline: true },
-    ],
-    th: [
-      { title: 'เบอร์พี 10 ครั้ง', description: 'เบอร์พี 10 ครั้งเดี๋ยวนี้!', duration: '2 นาที', difficulty: 'medium' as ActionDifficulty, interactiveType: 'none' as InteractiveType, partnerMessage: 'ไปเลย! เผาผลาญด้วยกัน! คุณทำได้!', isOffline: true },
-    ],
-  },
-};
+// ─── アクション履歴サマリー ─────────────────────────────────────────────
+/**
+ * scoreHistory の直近7日間のアクション記録を1行のサマリー文字列に変換する。
+ * パートナーメッセージの文脈として OpenAI プロンプトに埋め込む。
+ */
+export function buildRecentActionSummary(history: ScoreEntry[], language: Language): string {
+  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const recent = history
+    .filter((e) => (e.kind === 'action' || !e.kind) && e.timestamp >= sevenDaysAgo)
+    .slice(0, 12);
 
-export function getRandomFallback(partner: PartnerType, language: Language): ActionSuggestion {
-  const langActions = FALLBACK_ACTIONS[partner][language] ?? FALLBACK_ACTIONS[partner].ja;
-  return langActions[Math.floor(Math.random() * langActions.length)];
+  if (recent.length === 0) {
+    return language === 'ja'
+      ? '直近7日間のアクション: なし（初回または長期ブランク）'
+      : language === 'th'
+        ? 'ไม่มีกิจกรรมใน 7 วันที่ผ่านมา (ครั้งแรกหรือหยุดนาน)'
+        : 'No actions in the last 7 days (first time or long break)';
+  }
+
+  const count = recent.length;
+  const avgGain = recent.reduce((s, e) => s + (e.scoreGain ?? 0), 0) / count;
+  const titles = recent
+    .slice(0, 3)
+    .map((e) => e.actionTitle)
+    .filter((t): t is string => !!t);
+
+  const mid = Math.floor(recent.length / 2);
+  const newerGain = mid > 0
+    ? recent.slice(0, mid).reduce((s, e) => s + (e.scoreGain ?? 0), 0) / mid
+    : avgGain;
+  const olderGain = mid > 0
+    ? recent.slice(mid).reduce((s, e) => s + (e.scoreGain ?? 0), 0) / (recent.length - mid)
+    : avgGain;
+  const trendJa = newerGain > olderGain + 0.5 ? '上昇中' : newerGain < olderGain - 0.5 ? '下降中' : '安定';
+  const trendEn = newerGain > olderGain + 0.5 ? 'improving' : newerGain < olderGain - 0.5 ? 'declining' : 'stable';
+
+  if (language === 'ja') {
+    return `直近7日: ${count}回完了, 平均+${avgGain.toFixed(1)}pt, 傾向=${trendJa}${titles.length ? `, 最近="${titles.join('・')}"` : ''}`;
+  }
+  if (language === 'th') {
+    return `7 วันล่าสุด: ${count} ครั้ง, เฉลี่ย+${avgGain.toFixed(1)}pt, แนวโน้ม=${trendEn}${titles.length ? `, ล่าสุด="${titles.join(', ')}"` : ''}`;
+  }
+  return `Last 7 days: ${count} done, avg +${avgGain.toFixed(1)}pt, trend=${trendEn}${titles.length ? `, recent="${titles.join(', ')}"` : ''}`;
 }
 
-// ─── OpenAI API呼び出し ────────────────────────────────────────────────
-interface GenerateActionParams {
+// ─── アクション素の肉付け（OpenAI） ────────────────────────────────────
+export interface GenerateActionFromBaseParams {
+  baseId: string;
   partner: PartnerType;
   brainScore: number;
   language: Language;
+  /** scoreHistory から生成した直近の行動サマリー（省略可） */
+  recentActionSummary?: string;
 }
 
-export async function generateAction(params: GenerateActionParams): Promise<ActionSuggestion> {
-  const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
-
-  if (!apiKey || apiKey === 'YOUR_OPENAI_API_KEY_HERE') {
-    // APIキー未設定の場合はフォールバックを返す
-    return getRandomFallback(params.partner, params.language);
-  }
+export async function generateActionFromBase(params: GenerateActionFromBaseParams): Promise<ActionSuggestion> {
+  const base = getActionBaseById(params.baseId);
+  if (!base) throw new Error(`Unknown action base: ${params.baseId}`);
 
   const systemPrompt = SYSTEM_PROMPTS[params.partner][params.language];
+  const userMessage = buildAdaptBaseUserMessage(params, base);
 
-  const userMessage = buildUserMessage(params);
-
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [
+  let content: string;
+  try {
+    content = await callProxy(
+      [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: userMessage },
+        { role: 'user',   content: userMessage },
       ],
-      response_format: { type: 'json_object' },
-      max_tokens: 350,
-      temperature: 0.85,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`OpenAI API error: ${response.status}`);
+      { max_tokens: 420, temperature: 0.88, json_mode: true },
+    );
+  } catch (err) {
+    if (__DEV__) console.error('[openAIProxy] generateActionFromBase failed:', err);
+    return buildOfflineActionFromBase(params.baseId, params.partner, params.language);
   }
 
-  const data = await response.json();
-  const content = data.choices?.[0]?.message?.content;
+  const parsed = JSON.parse(content) as Record<string, unknown>;
 
-  if (!content) throw new Error('Empty response from OpenAI');
+  const difficulty: ActionDifficulty = ['easy', 'medium', 'hard'].includes(String(parsed.difficulty))
+    ? (parsed.difficulty as ActionDifficulty)
+    : base.defaultDifficulty;
 
-  const parsed = JSON.parse(content);
+  const mustType = base.interactiveType;
 
-  const difficulty: ActionDifficulty =
-    ['easy', 'medium', 'hard'].includes(parsed.difficulty) ? parsed.difficulty : 'medium';
+  const breathingConfig =
+    mustType === 'breathing' && parsed.breathingConfig && typeof parsed.breathingConfig === 'object'
+      ? {
+          inhaleSeconds: Number((parsed.breathingConfig as { inhaleSeconds?: number }).inhaleSeconds ?? base.defaultBreathing?.inhaleSeconds ?? 4),
+          holdSeconds: Number((parsed.breathingConfig as { holdSeconds?: number }).holdSeconds ?? base.defaultBreathing?.holdSeconds ?? 0),
+          exhaleSeconds: Number((parsed.breathingConfig as { exhaleSeconds?: number }).exhaleSeconds ?? base.defaultBreathing?.exhaleSeconds ?? 6),
+          cycles: Number((parsed.breathingConfig as { cycles?: number }).cycles ?? base.defaultBreathing?.cycles ?? 5),
+        }
+      : mustType === 'breathing' && base.defaultBreathing
+        ? { ...base.defaultBreathing }
+        : undefined;
 
-  const interactiveType: InteractiveType =
-    ['none', 'breathing', 'timer'].includes(parsed.interactiveType) ? parsed.interactiveType : 'none';
+  const timerSec =
+    mustType === 'timer' && typeof parsed.timerDurationSeconds === 'number'
+      ? Math.max(15, Math.min(3600, parsed.timerDurationSeconds))
+      : mustType === 'timer'
+        ? base.defaultTimerSeconds ?? base.nominalSeconds
+        : undefined;
+
+  let brainImpact = Number(parsed.brainImpact);
+  if (!Number.isFinite(brainImpact)) brainImpact = base.brainImpact;
+  brainImpact = Math.min(5, Math.max(1, Math.round(brainImpact)));
+
+  let nominalDurationSeconds = base.nominalSeconds;
+  if (mustType === 'timer' && timerSec) nominalDurationSeconds = timerSec;
+  if (mustType === 'breathing' && breathingConfig) {
+    nominalDurationSeconds =
+      (breathingConfig.inhaleSeconds + breathingConfig.holdSeconds + breathingConfig.exhaleSeconds) *
+      breathingConfig.cycles;
+  }
 
   return {
-    title: parsed.title ?? '回復アクション',
-    description: parsed.description ?? '',
+    baseId: base.id,
+    brainImpact,
+    nominalDurationSeconds,
+    title: typeof parsed.title === 'string' ? parsed.title.slice(0, 40) : base.titleHint[params.language],
+    description: typeof parsed.description === 'string' ? parsed.description : base.neutralCore[params.language],
+    duration: typeof parsed.duration === 'string' ? parsed.duration : String(parsed.duration ?? ''),
+    partnerMessage: typeof parsed.partnerMessage === 'string' ? parsed.partnerMessage : '',
     difficulty,
-    interactiveType,
-    breathingConfig: interactiveType === 'breathing' && parsed.breathingConfig
-      ? {
-          inhaleSeconds: parsed.breathingConfig.inhaleSeconds ?? 4,
-          holdSeconds:   parsed.breathingConfig.holdSeconds   ?? 0,
-          exhaleSeconds: parsed.breathingConfig.exhaleSeconds ?? 6,
-          cycles:        parsed.breathingConfig.cycles        ?? 5,
-        }
-      : undefined,
-    timerConfig: interactiveType === 'timer' && parsed.timerDurationSeconds
-      ? { durationSeconds: parsed.timerDurationSeconds }
-      : undefined,
-    duration: parsed.duration ?? '5分',
-    partnerMessage: parsed.partnerMessage ?? '',
+    interactiveType: mustType,
+    breathingConfig,
+    timerConfig: mustType === 'timer' && timerSec ? { durationSeconds: timerSec } : undefined,
     isOffline: false,
   };
 }
 
-function buildUserMessage({ brainScore, language }: GenerateActionParams): string {
-  const langLabel: Record<Language, string> = {
-    ja: '日本語',
-    en: 'English',
-    th: 'ภาษาไทย',
-  };
-
-  // スコアに応じた難易度ヒント
+function buildAdaptBaseUserMessage(params: GenerateActionFromBaseParams, base: ActionBaseDefinition): string {
+  const langLabel: Record<Language, string> = { ja: '日本語', en: 'English', th: 'ภาษาไทย' };
   const difficultyHint =
-    brainScore >= 70 ? 'medium または hard（元気があるので、少し挑戦的なアクションを）' :
-    brainScore >= 40 ? 'easy または medium（バランスよく提案して）' :
-                       'easy（スコアが低いので、まず取り組みやすいアクションから）';
+    params.brainScore >= 70 ? 'medium または hard を推奨' :
+    params.brainScore >= 40 ? 'easy または medium を推奨' :
+    'easy を推奨';
 
-  return `ユーザーの現在の状態:
-- ブレインスコア: ${brainScore}/100 (${getScoreLabel(brainScore)})
-- 推奨難易度: ${difficultyHint}
-- 回答言語: ${langLabel[language]}
+  const core = base.neutralCore[params.language] ?? base.neutralCore.ja;
 
-上記の状態に基づき、今このユーザーに最適な回復アクションを1つ提案してください。
-必ず${langLabel[language]}で回答し、以下のJSON形式で返してください:
+  const historyLine = params.recentActionSummary
+    ? `\nユーザーのアクション履歴: ${params.recentActionSummary}`
+    : '';
+
+  return `【重要】次の「アクション素」を必ず守ってください（ユーザー向けの文章に反映すること）。
+- baseId: "${base.id}"
+- interactiveType は "${base.interactiveType}" のみ。別のタイプに変更してはいけません。
+- 中立的な内容の骨子:
+${core}
+- 素の目安所要秒: ${base.nominalSeconds}
+
+ユーザーのブレインスコア: ${params.brainScore}/100（${getScoreLabel(params.brainScore)}）
+難易度の目安: ${difficultyHint}${historyLine}
+出力言語: ${langLabel[params.language]}
+
+あなたの仕事: 上記の素を、あなたのキャラクター口調で言い換え、タイトル・手順説明・パートナーの一言・表示用の所要時間・難易度・脳への影響度を設定すること。
+partnerMessage はブレインスコアとアクション履歴（継続・初回・ブランク・傾向）を踏まえてパーソナライズされた一言にすること。
+brainImpact は 1（ごく軽い）〜5（強い回復・集中の切り替えが大きい）の整数で、素の内容を踏まえて客観的に決めてください。
+
+次のJSONのみを返してください:
 {
-  "title": "アクションのタイトル（15文字以内）",
-  "description": "具体的な手順（60〜120文字）",
-  "duration": "所要時間（例: 2分、5分、10分）",
-  "difficulty": "easy（1〜2分以内・その場でできる）/ medium（3〜10分・少し努力が必要）/ hard（10分以上・本格的な取り組み）のいずれか",
-  "partnerMessage": "パートナーらしい一言（20〜40文字）",
-  "interactiveType": "none または breathing または timer",
-  "breathingConfig": {
-    "inhaleSeconds": 4,
-    "holdSeconds": 0,
-    "exhaleSeconds": 6,
-    "cycles": 5
-  },
+  "title": "20文字以内目安",
+  "description": "具体的な手順 80〜150文字",
+  "duration": "所要時間の表示用文字列（例: 2分）",
+  "difficulty": "easy | medium | hard",
+  "partnerMessage": "パートナーらしい一言 20〜50文字",
+  "brainImpact": 1,
+  "breathingConfig": { "inhaleSeconds": 4, "holdSeconds": 0, "exhaleSeconds": 6, "cycles": 5 },
   "timerDurationSeconds": 120
 }
-interactiveTypeの判断基準:
-- breathing: 深呼吸・4-7-8呼吸・マインドフルネス呼吸など呼吸に集中するアクション
-- timer: 冷水洗顔・読書・ウォーキング・瞑想など一定時間の作業
-- none: 上記に当てはまらないもの
-breathingConfigはinteractiveTypeがbreathingの時のみ含める
-timerDurationSecondsはinteractiveTypeがtimerの時のみ含める（秒単位）`;
+interactiveType が breathing のときだけ breathingConfig を含め、timer のときだけ timerDurationSeconds（秒）を含め、none のときは両方省略。`;
 }
 
 function getScoreLabel(score: number): string {
@@ -255,4 +311,161 @@ function getScoreLabel(score: number): string {
   if (score >= 41) return '普通';
   if (score >= 21) return '注意';
   return '緊急';
+}
+
+export function getBrainScoreLabel(score: number, language: Language): string {
+  if (language === 'en') {
+    if (score >= 91) return 'Excellent';
+    if (score >= 71) return 'Good';
+    if (score >= 41) return 'Moderate';
+    if (score >= 21) return 'Caution';
+    return 'Critical';
+  }
+  if (language === 'th') {
+    if (score >= 91) return 'ยอดเยี่ยม';
+    if (score >= 71) return 'ดี';
+    if (score >= 41) return 'ปานกลาง';
+    if (score >= 21) return 'ระวัง';
+    return 'วิกฤต';
+  }
+  return getScoreLabel(score);
+}
+
+function buildHomeSystemPrompt(partner: PartnerType, language: Language): string {
+  const role = SYSTEM_PROMPTS[partner][language];
+  const langLabel: Record<Language, string> = { ja: '日本語', en: 'English', th: 'ภาษาไทย' };
+  return `${role}
+
+【追加ルール・ホーム画面専用】
+- 返答は厳密に1つのJSONオブジェクトのみ: {"message":"..."}
+- "message"にはホーム画面の吹き出し用の短いセリフだけを書く（1〜3文）。
+- アクションの具体的手順・タイトル・チェックリストは書かない（別タブで提案される）。
+- ユーザーのブレインスコアの状態に言及しつつ、上記のキャラクター口調を必ず守る。
+- 出力言語は${langLabel[language]}のみ。`;
+}
+
+export interface GenerateHomeMessageParams {
+  partner: PartnerType;
+  brainScore: number;
+  language: Language;
+}
+
+export async function generateHomePartnerMessage(params: GenerateHomeMessageParams): Promise<string> {
+  const systemPrompt = buildHomeSystemPrompt(params.partner, params.language);
+  const band = getBrainScoreLabel(params.brainScore, params.language);
+  const userMessage =
+    params.language === 'ja'
+      ? `現在のブレインスコア: ${params.brainScore}/100（傾向: ${band}）。この状態に合ったホーム用メッセージを生成してください。`
+      : params.language === 'th'
+        ? `คะแนนสมองปัจจุบัน: ${params.brainScore}/100 (ภาพรวม: ${band}). สร้างข้อความต้อนรับหน้าแรกให้สอดคล้อง.`
+        : `Current brain score: ${params.brainScore}/100 (status: ${band}). Generate the home-screen message accordingly.`;
+
+  const content = await callProxy(
+    [
+      { role: 'system', content: systemPrompt },
+      { role: 'user',   content: userMessage },
+    ],
+    { max_tokens: 220, temperature: 0.88, json_mode: true },
+  );
+
+  const parsed = JSON.parse(content) as { message?: string };
+  const msg = typeof parsed.message === 'string' ? parsed.message.trim() : '';
+  if (!msg) throw new Error('Empty message');
+  return msg;
+}
+
+const PLAN_DURATION_LO = PLAN_TARGET_SECONDS - 420;
+const PLAN_DURATION_HI = PLAN_TARGET_SECONDS + 420;
+
+export interface GenerateActionPlanFromTestParams {
+  baseA: number;
+  provisionalB: number;
+  partner: PartnerType;
+  language: Language;
+  /** アクション履歴（partnerMessage のパーソナライズに使用） */
+  scoreHistory?: ScoreEntry[];
+}
+
+/** テスト結果 B（と A）に基づき、約30分の複数ステッププランを生成 */
+export async function generateActionPlanFromTestScores(
+  params: GenerateActionPlanFromTestParams,
+): Promise<ActionSuggestion[]> {
+  const offline = () => buildOfflineActionPlanSteps(params.baseA, params.provisionalB, params.partner, params.language);
+  const recentActionSummary = params.scoreHistory
+    ? buildRecentActionSummary(params.scoreHistory, params.language)
+    : undefined;
+
+  const catalog = ACTION_BASES.map(
+    (b) => `${b.id}\tnominal_sec=${b.nominalSeconds}\ttype=${b.interactiveType}\timpact=${b.brainImpact}`,
+  ).join('\n');
+
+  const band = getBrainScoreLabel(params.provisionalB, params.language);
+  const userMessage =
+    params.language === 'ja'
+      ? `テスト直前スコア A=${params.baseA}、テスト後暫定 B=${params.provisionalB}（傾向: ${band}）。
+カタログの baseId **だけ**を使い、**4〜7個**を**実行順**に並べる。各 id の nominal_sec の合計が **${PLAN_DURATION_LO}〜${PLAN_DURATION_HI} 秒**（約30分前後）になること。
+Bが低い・A−Bが大きいときは、脳の切り替え・回復に効くステップを優先。
+
+カタログ（タブ区切り）:
+${catalog}
+
+JSON のみ: {"ordered_base_ids":["id1","id2",...]}`
+      : params.language === 'th'
+        ? `A=${params.baseA}, B=${params.provisionalB} (${band}). Use ONLY baseIds. Order 4-7 steps. Sum nominal_sec ${PLAN_DURATION_LO}-${PLAN_DURATION_HI}s.
+Catalog:
+${catalog}
+JSON only: {"ordered_base_ids":["..."]}`
+        : `A=${params.baseA} (before test), B=${params.provisionalB} after test (${band}).
+Use ONLY baseIds from catalog. Pick **4-7** steps in order. Sum of nominal_sec must be **${PLAN_DURATION_LO}-${PLAN_DURATION_HI} seconds** (~30 min). When B is low or A−B is large, prefer recovery-focused steps.
+
+Catalog:
+${catalog}
+JSON only: {"ordered_base_ids":["id1",...]}`;
+
+  const systemPrompt =
+    'You output ONLY valid JSON: {"ordered_base_ids": string[]}. Each string must exactly match a baseId from the catalog. No other keys.';
+
+  try {
+    const content = await callProxy(
+      [
+        { role: 'system', content: systemPrompt },
+        { role: 'user',   content: userMessage },
+      ],
+      { max_tokens: 420, temperature: 0.55, json_mode: true },
+    );
+    const parsed = JSON.parse(content) as { ordered_base_ids?: unknown };
+    const raw = parsed.ordered_base_ids;
+    if (!Array.isArray(raw) || raw.length < 2) return offline();
+    const validated: string[] = [];
+    for (const id of raw) {
+      if (typeof id !== 'string') continue;
+      if (getActionBaseById(id)) validated.push(id);
+    }
+    if (validated.length < 2) return offline();
+    let sumNom = 0;
+    for (const id of validated) {
+      sumNom += getActionBaseById(id)!.nominalSeconds;
+    }
+    if (sumNom < PLAN_DURATION_LO - 240 || sumNom > PLAN_DURATION_HI + 420) return offline();
+
+    const steps: ActionSuggestion[] = [];
+    for (const id of validated) {
+      try {
+        steps.push(
+          await generateActionFromBase({
+            baseId: id,
+            partner: params.partner,
+            brainScore: params.provisionalB,
+            language: params.language,
+            recentActionSummary,
+          }),
+        );
+      } catch {
+        steps.push(buildOfflineActionFromBaseSafe(id, params.partner, params.language));
+      }
+    }
+    return steps;
+  } catch {
+    return offline();
+  }
 }

@@ -1,14 +1,16 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
-import { PartnerType, Language } from '../types';
+import { PartnerType, Language, ReminderTime } from '../types';
 import i18n from 'i18next';
 
 // 通知受信時の動作設定（フォアグラウンドでもバナー表示）
+// Expo SDK 53+ では shouldShowAlert は deprecated。shouldShowBanner + shouldShowList を使用
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -43,45 +45,50 @@ function getRandomDailyMessage(partner: PartnerType): string {
   return messages[Math.floor(Math.random() * messages.length)];
 }
 
-// ── 毎日のリマインダーをスケジュール ─────────────────────────────────
-export async function scheduleDailyReminder(
-  hour: number,
-  minute: number,
+function normalizeReminderTimes(times: ReminderTime[]): ReminderTime[] {
+  const seen = new Set<string>();
+  const normalized: ReminderTime[] = [];
+  for (const time of times) {
+    const hour = Math.min(23, Math.max(0, Math.floor(time.hour)));
+    const minute = Math.min(59, Math.max(0, Math.floor(time.minute)));
+    const key = `${hour}:${minute}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    normalized.push({ hour, minute });
+  }
+  normalized.sort((a, b) => (a.hour * 60 + a.minute) - (b.hour * 60 + b.minute));
+  return normalized;
+}
+
+// ── 毎日のリマインダーを複数時刻でスケジュール ──────────────────────────
+export async function scheduleDailyReminders(
+  reminderTimes: ReminderTime[],
   partner: PartnerType,
-): Promise<string> {
+): Promise<string[]> {
   // 既存の通知をキャンセルしてから再設定
   await Notifications.cancelAllScheduledNotificationsAsync();
 
-  const id = await Notifications.scheduleNotificationAsync({
-    content: {
-      title: getPartnerName(partner),
-      body: getRandomDailyMessage(partner),
-      data: { screen: 'Home' satisfies NotificationScreen },
-      sound: true,
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DAILY,
-      hour,
-      minute,
-    },
-  });
+  const normalized = normalizeReminderTimes(reminderTimes);
+  const ids: string[] = [];
 
-  // 朝の通知も追加（7:30固定）
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title: getPartnerName(partner),
-      body: i18n.t(`notifications.morning.${partner}`),
-      data: { screen: 'Action' satisfies NotificationScreen },
-      sound: true,
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DAILY,
-      hour: 7,
-      minute: 30,
-    },
-  });
+  for (const time of normalized) {
+    const id = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: getPartnerName(partner),
+        body: getRandomDailyMessage(partner),
+        data: { screen: 'Home' satisfies NotificationScreen },
+        sound: true,
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour: time.hour,
+        minute: time.minute,
+      },
+    });
+    ids.push(id);
+  }
 
-  return id;
+  return ids;
 }
 
 // ── 全通知キャンセル ──────────────────────────────────────────────────
@@ -100,6 +107,27 @@ export async function sendInterventionNotification(partner: PartnerType): Promis
       sound: true,
     },
     trigger: null, // 即時送信
+  });
+}
+
+// ── アクション・タイマーガイド終了（即時）───────────────────────────────
+export async function sendTimerActionFinishedNotification(
+  partner: PartnerType,
+  actionTitle: string,
+  appNotificationsEnabled: boolean,
+): Promise<void> {
+  if (!appNotificationsEnabled) return;
+  const { status } = await Notifications.getPermissionsAsync();
+  if (status !== 'granted') return;
+
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: i18n.t('notifications.timerFinishedTitle', { partner: getPartnerName(partner) }),
+      body: i18n.t('notifications.timerFinishedBody', { title: actionTitle }),
+      data: { screen: 'Action' satisfies NotificationScreen },
+      sound: true,
+    },
+    trigger: null,
   });
 }
 

@@ -8,6 +8,7 @@ import {
   StatusBar,
   Animated,
   Easing,
+  ScrollView,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useI18n } from '../hooks/useI18n';
@@ -15,9 +16,13 @@ import { useAppStore } from '../store/useAppStore';
 import { PartnerType, RootStackParamList } from '../types';
 import {
   requestNotificationPermission,
-  scheduleDailyReminder,
+  scheduleDailyReminders,
   getExpoPushToken,
 } from '../services/notificationService';
+import { PARTNER_IMAGE_SOURCES } from '../config/partnerAssets';
+import { PARTNER_UI } from '../config/partnerUi';
+import { useTheme } from '../hooks/useTheme';
+import { useEffectiveBrainScore } from '../hooks/useEffectiveBrainScore';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PartnerResult'>;
 
@@ -33,19 +38,26 @@ const PARTNER_CONFIG: Record<
 
 export default function PartnerScreen({ route }: Props) {
   const { t } = useI18n();
-  const { setOnboardingComplete, setNotificationsEnabled, setReminderTime, brainScore, reminderHour, reminderMinute } = useAppStore();
+  const theme = useTheme();
+  const { setOnboardingComplete, setNotificationsEnabled, reminderTimes } = useAppStore();
+  const brainScore = useEffectiveBrainScore();
 
   const handleStart = async () => {
+    const { partnerQuizOnly, setPartnerQuizOnly, bumpAppSession } = useAppStore.getState();
     // 通知権限をリクエスト（診断完了のポジティブな瞬間に聞く）
     const granted = await requestNotificationPermission();
     if (granted) {
       setNotificationsEnabled(true);
-      await scheduleDailyReminder(reminderHour, reminderMinute, partner);
+      await scheduleDailyReminders(reminderTimes, partner);
       await getExpoPushToken(); // 将来のFirebase連携用にトークン取得
     }
     setOnboardingComplete(true);
     // Firebase にプロフィールを同期
     await useAppStore.getState().syncProfile();
+    if (partnerQuizOnly) {
+      setPartnerQuizOnly(false);
+      bumpAppSession();
+    }
   };
   const { partner } = route.params;
   const config = PARTNER_CONFIG[partner];
@@ -72,7 +84,7 @@ export default function PartnerScreen({ route }: Props) {
       }),
     ]).start();
 
-    setTimeout(() => {
+    const buttonDelayTimer = setTimeout(() => {
       Animated.parallel([
         Animated.timing(buttonOpacity, {
           toValue: 1, duration: 350, useNativeDriver: true,
@@ -83,6 +95,15 @@ export default function PartnerScreen({ route }: Props) {
         }),
       ]).start();
     }, 700);
+
+    return () => {
+      clearTimeout(buttonDelayTimer);
+      contentOpacity.stopAnimation();
+      contentTranslateY.stopAnimation();
+      emojiScale.stopAnimation();
+      buttonOpacity.stopAnimation();
+      buttonTranslateY.stopAnimation();
+    };
   }, []);
 
   const getScoreStatus = (score: number) => {
@@ -94,51 +115,71 @@ export default function PartnerScreen({ route }: Props) {
   const status = getScoreStatus(brainScore);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0d0d0d" />
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.appBg }]}>
+      <StatusBar barStyle={theme.statusBarStyle} backgroundColor={theme.colors.appBg} />
 
-      <Animated.View
-        style={[
-          styles.content,
-          { opacity: contentOpacity, transform: [{ translateY: contentTranslateY }] },
-        ]}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        bounces
       >
-        <Text style={styles.resultTitle}>{t('partner.resultTitle')}</Text>
+        <Animated.View
+          style={[
+            styles.content,
+            { opacity: contentOpacity, transform: [{ translateY: contentTranslateY }] },
+          ]}
+        >
+          <Text style={[styles.resultTitle, { color: theme.colors.textSubtle }]}>{t('partner.resultTitle')}</Text>
 
-        {/* パートナーカード */}
-        <View style={[styles.partnerCard, { backgroundColor: config.bgColor, borderColor: config.borderColor }]}>
-          <Animated.Text style={[styles.partnerEmoji, { transform: [{ scale: emojiScale }] }]}>
-            {config.emoji}
-          </Animated.Text>
-          <Text style={[styles.partnerName, { color: config.color }]}>
-            {t(`partner.${partner}.name`)}
-          </Text>
-          <Text style={styles.partnerDescription}>
-            {t(`partner.${partner}.description`)}
-          </Text>
-          <View style={[styles.catchphraseBox, { borderColor: config.borderColor }]}>
-            <Text style={[styles.catchphrase, { color: config.color }]}>
-              {t(`partner.${partner}.catchphrase`)}
-            </Text>
-          </View>
-        </View>
-
-        {/* 初期スコア */}
-        <View style={styles.scoreContainer}>
-          <Text style={styles.scoreTitle}>{t('partner.brainScoreLabel')}</Text>
-          <View style={styles.scoreRow}>
-            <Text style={styles.scoreNumber}>{brainScore}</Text>
-            <Text style={[styles.scoreStatus, { color: status.color }]}>{status.label}</Text>
-          </View>
-          <View style={styles.scoreBarBg}>
+          {/* パートナーカード */}
+          <View style={[styles.partnerCard, { backgroundColor: config.bgColor, borderColor: config.borderColor }]}>
             <View
-              style={[styles.scoreBarFill, { width: `${brainScore}%`, backgroundColor: status.color }]}
-            />
+              style={[
+                styles.partnerHeroFrame,
+                {
+                  borderColor: config.color + '88',
+                  borderRadius: PARTNER_UI.resultHeroCornerRadius,
+                },
+              ]}
+            >
+              <Animated.Image
+                source={PARTNER_IMAGE_SOURCES[partner].intro}
+                style={[styles.partnerHeroImage, { transform: [{ scale: emojiScale }] }]}
+                resizeMode="contain"
+              />
+            </View>
+            <Text style={[styles.partnerName, { color: config.color }]}>
+              {t(`partner.${partner}.name`)}
+            </Text>
+            <Text style={[styles.partnerDescription, { color: theme.colors.textMuted }]}>
+              {t(`partner.${partner}.description`)}
+            </Text>
+            <View style={[styles.catchphraseBox, { borderColor: config.borderColor }]}>
+              <Text style={[styles.catchphrase, { color: config.color }]}>
+                {t(`partner.${partner}.catchphrase`)}
+              </Text>
+            </View>
           </View>
-        </View>
-      </Animated.View>
 
-      {/* スタートボタン */}
+          {/* 初期スコア */}
+          <View style={[styles.scoreContainer, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
+            <Text style={[styles.scoreTitle, { color: theme.colors.textSubtle }]}>{t('partner.brainScoreLabel')}</Text>
+            <View style={styles.scoreRow}>
+              <Text style={styles.scoreNumber}>{brainScore}</Text>
+              <Text style={[styles.scoreStatus, { color: status.color }]}>{status.label}</Text>
+            </View>
+            <View style={styles.scoreBarBg}>
+              <View
+                style={[styles.scoreBarFill, { width: `${brainScore}%`, backgroundColor: status.color }]}
+              />
+            </View>
+          </View>
+        </Animated.View>
+      </ScrollView>
+
+      {/* スタートボタン（本文と重ならないようスクロール外に固定） */}
       <Animated.View
         style={[
           styles.buttonContainer,
@@ -162,10 +203,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0d0d0d',
   },
-  content: {
+  scroll: {
     flex: 1,
+  },
+  scrollContent: {
     paddingHorizontal: 24,
     paddingTop: 24,
+    paddingBottom: 12,
+    flexGrow: 1,
+  },
+  content: {
+    paddingBottom: 8,
   },
   resultTitle: {
     fontSize: 13,
@@ -183,12 +231,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  partnerEmoji: {
-    fontSize: 64,
-    marginBottom: 16,
+  partnerHeroFrame: {
+    width: '100%',
+    aspectRatio: 2 / 3,
+    overflow: 'hidden',
+    borderWidth: 2,
+    marginBottom: 8,
+    backgroundColor: 'transparent',
+  },
+  partnerHeroImage: {
+    width: '100%',
+    height: '100%',
   },
   partnerName: {
-    fontSize: 40,
+    fontSize: 44,
     fontWeight: '900',
     marginBottom: 12,
     letterSpacing: -0.5,
@@ -257,7 +313,10 @@ const styles = StyleSheet.create({
   buttonContainer: {
     paddingHorizontal: 24,
     paddingBottom: 32,
-    paddingTop: 16,
+    paddingTop: 12,
+    backgroundColor: '#0d0d0d',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#2a2a2a',
   },
   startButton: {
     borderRadius: 16,

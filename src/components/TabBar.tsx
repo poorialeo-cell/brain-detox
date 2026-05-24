@@ -1,23 +1,25 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useContext } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet,
-  Animated, Platform,
+  View, Text, Image, TouchableOpacity, StyleSheet,
+  Animated, Platform, type LayoutChangeEvent,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { BottomTabBarHeightCallbackContext, BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useHaptics } from '../hooks/useHaptics';
+import { useTheme } from '../hooks/useTheme';
 
-const TAB_ICONS: Record<string, string> = {
-  Home:     '🧠',
-  Action:   '⚡',
-  History:  '📊',
-  Settings: '⚙️',
+const TAB_IMAGES: Record<string, ReturnType<typeof require>> = {
+  Home:     require('../../assets/tabs/tab_home.png'),
+  Action:   require('../../assets/tabs/tab_action.png'),
+  History:  require('../../assets/tabs/tab_history.png'),
+  Settings: require('../../assets/tabs/tab_settings.png'),
 };
 
 function TabItem({
-  route, isFocused, onPress, label,
+  route, isFocused, onPress, label, accent, inactive, tabGlow,
 }: {
   route: any; isFocused: boolean; onPress: () => void; label: string;
+  accent: string; inactive: string; tabGlow: string;
 }) {
   const scale  = useRef(new Animated.Value(isFocused ? 1.18 : 1)).current;
   const opacity = useRef(new Animated.Value(isFocused ? 1 : 0.4)).current;
@@ -31,30 +33,42 @@ function TabItem({
     ]).start();
   }, [isFocused]);
 
+  const labelColor = isFocused ? '#ffffff' : 'rgba(255,255,255,0.45)';
+
   return (
     <TouchableOpacity style={styles.tabItem} onPress={onPress} activeOpacity={0.75}>
-      <Animated.View style={[styles.glow, { opacity: glowOp }]} />
-      <Animated.Text style={{ fontSize: 22, transform: [{ scale }], opacity }}>
-        {TAB_ICONS[route.name] ?? '●'}
-      </Animated.Text>
-      <Animated.Text style={[styles.label, { opacity, color: isFocused ? '#c4b5fd' : '#666' }]}>
-        {label}
-      </Animated.Text>
+      <Animated.View style={[styles.glow, { opacity: glowOp, backgroundColor: tabGlow }]} />
+      <Animated.View style={[styles.iconWrapper, { transform: [{ scale }], opacity }]}>
+        <Image
+          source={TAB_IMAGES[route.name]}
+          style={styles.tabIcon}
+          resizeMode="contain"
+        />
+        <Animated.Text style={[styles.label, { color: labelColor }]}>
+          {label}
+        </Animated.Text>
+      </Animated.View>
     </TouchableOpacity>
   );
 }
 
 export default function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const haptics = useHaptics();
+  const theme = useTheme();
+  const onTabBarHeight = useContext(BottomTabBarHeightCallbackContext);
+
+  const onWrapperLayout = (e: LayoutChangeEvent) => {
+    onTabBarHeight?.(e.nativeEvent.layout.height);
+  };
 
   return (
-    <View style={styles.wrapper}>
+    <View style={styles.wrapper} onLayout={onWrapperLayout}>
       <BlurView
         intensity={Platform.OS === 'ios' ? 60 : 30}
-        tint="dark"
-        style={styles.blurContainer}
+        tint={theme.id === 'white' ? 'light' : 'dark'}
+        style={[styles.blurContainer, { borderColor: theme.colors.border }]}
       >
-        <View style={styles.innerBar}>
+        <View style={[styles.innerBar, { backgroundColor: `${theme.colors.card}cc` }]}>
           {state.routes.map((route, index) => {
             const { options } = descriptors[route.key];
             const label =
@@ -74,6 +88,9 @@ export default function TabBar({ state, descriptors, navigation }: BottomTabBarP
                   if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name);
                 }}
                 label={label}
+                accent={theme.colors.accentText}
+                inactive={theme.colors.textSubtle}
+                tabGlow={theme.colors.tabGlow}
               />
             );
           })}
@@ -108,14 +125,28 @@ const styles = StyleSheet.create({
   },
   tabItem: {
     flex: 1, alignItems: 'center', justifyContent: 'center',
-    gap: 3, paddingVertical: 4, position: 'relative',
+    paddingVertical: 4, position: 'relative',
   },
   glow: {
     position: 'absolute',
-    width: 48, height: 48, borderRadius: 24,
+    width: 71, height: 62, borderRadius: 18,
     backgroundColor: 'rgba(167,139,250,0.12)',
   },
+  iconWrapper: {
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  tabIcon: {
+    width: 52,
+    height: 52,
+  },
   label: {
-    fontSize: 10, fontWeight: '700', letterSpacing: 0.2,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+    marginTop: -8,
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
 });

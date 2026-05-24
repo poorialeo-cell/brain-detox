@@ -1,10 +1,12 @@
 import { View, Text, StyleSheet } from 'react-native';
+import { useI18n } from '../hooks/useI18n';
 
 export default function TimerScreen() {
+  const { t } = useI18n();
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>タイマー</Text>
-      <Text style={styles.subtitle}>集中時間を計ろう⏱️</Text>
+      <Text style={styles.title}>{t('timer.title')}</Text>
+      <Text style={styles.subtitle}>{t('timer.subtitle')}</Text>
     </View>
   );
 }
