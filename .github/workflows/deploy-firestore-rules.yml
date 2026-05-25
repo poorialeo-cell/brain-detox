@@ -21,8 +21,4 @@ jobs:
         with:
           args: deploy --only firestore:rules,firestore:indexes
         env:
-          # GitHub リポジトリの Settings > Secrets に FIREBASE_TOKEN を登録すること
-          # 取得方法: firebase login:ci （ローカルで実行）
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-          # または GOOGLE_APPLICATION_CREDENTIALS でサービスアカウントキーを使う場合:
-          # GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
