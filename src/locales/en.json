@@ -96,6 +96,15 @@
     "limitDaily": "You can take this check up to 2 times per day. Try again after midnight or tomorrow.",
     "limitCooldown": "Wait at least 6 hours since your last check. Next session: after {{time}}.",
     "limitDismiss": "Close",
+    "intro": {
+      "heading": "2-min Vibe Check",
+      "description": "Measure your cognitive state with 3 mini-games.\nResults are reflected in your Brain Score.",
+      "duration": "Takes about 2 minutes",
+      "phase1": "① Color Swerve — inhibition",
+      "phase2": "② Synapse Match — working memory",
+      "phase3": "③ Focus Shield — sustained attention",
+      "startButton": "Start Test"
+    },
     "vibe": {
       "title": "2-min Vibe Check",
       "timeLeft": "{{sec}}s left",
@@ -372,11 +381,36 @@
     "resetExecute": "Erase everything and start over",
     "version": "Version",
     "sectionAbout": "About",
+    "howToUse": "How to Use",
+    "howToUseDesc": "Review the app's features and flow",
     "privacyPolicy": "Privacy Policy",
     "privacyPolicyDesc": "How we handle your personal data",
     "termsOfService": "Terms of Service",
     "termsOfServiceDesc": "Terms and conditions for using the App",
     "openLinkErrorTitle": "Cannot open link",
     "openLinkErrorMessage": "Failed to open browser. Please check your network connection."
+  },
+  "welcome": {
+    "skip": "Skip",
+    "next": "Next",
+    "start": "Get Started",
+    "close": "Close",
+    "slides": [
+      {
+        "icon": "🧠",
+        "title": "What is Brain Rot?",
+        "body": "Watching too many short videos gradually weakens your focus, memory, and thinking. This is called \"brain rot.\" Brain Detox is here to help you recover."
+      },
+      {
+        "icon": "🚀",
+        "title": "How the App Works",
+        "body": "① Take the quiz to choose your AI partner\n② Your partner suggests daily actions\n③ Complete actions to boost your Brain Score\n④ The higher your score, the healthier your brain"
+      },
+      {
+        "icon": "⚡",
+        "title": "Regular Test (Vibe Check)",
+        "body": "Three 2-minute mini-games measure your cognitive function: Color Swerve, Synapse Match, and Focus Shield. Your results are reflected in your Brain Score. Take it regularly!"
+      }
+    ]
   }
 }

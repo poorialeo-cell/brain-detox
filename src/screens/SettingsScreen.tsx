@@ -349,6 +349,21 @@ export default function SettingsScreen() {
         {/* ── アプリ情報セクション ── */}
         <Text style={[styles.sectionLabel, { color: theme.colors.textSubtle }]}>{t('settings.sectionAbout')}</Text>
         <View style={[styles.card, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
+          <TouchableOpacity
+            style={styles.rowButton}
+            onPress={() => {
+              const parent = navigation.getParent<NativeStackNavigationProp<RootStackParamList>>();
+              parent?.navigate('Welcome');
+            }}
+            activeOpacity={0.7}
+          >
+            <View>
+              <Text style={[styles.rowButtonTitle, { color: theme.colors.text }]}>{t('settings.howToUse')}</Text>
+              <Text style={[styles.rowButtonDesc, { color: theme.colors.textSubtle }]}>{t('settings.howToUseDesc')}</Text>
+            </View>
+            <Text style={[styles.rowButtonArrow, { color: theme.colors.textSubtle }]}>›</Text>
+          </TouchableOpacity>
+          <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
           <TouchableOpacity style={styles.rowButton} onPress={handleOpenPrivacyPolicy} activeOpacity={0.7}>
             <View>
               <Text style={[styles.rowButtonTitle, { color: theme.colors.text }]}>{t('settings.privacyPolicy')}</Text>

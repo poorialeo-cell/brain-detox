@@ -33,6 +33,7 @@ import { DEFAULT_THEME } from '../theme/palettes';
 
 interface AppStore extends AppState {
   setOnboardingComplete: (value: boolean) => void;
+  setHasSeenWelcome: (value: boolean) => void;
   setPartnerQuizOnly: (value: boolean) => void;
   bumpAppSession: () => void;
   setSelectedPartner: (partner: PartnerType | null) => void;
@@ -62,6 +63,7 @@ interface AppStore extends AppState {
 
 const initialState: AppState = {
   isOnboardingComplete: false,
+  hasSeenWelcome: false,
   partnerQuizOnly: false,
   appSessionKey: 0,
   selectedPartner: null,
@@ -102,6 +104,7 @@ export const useAppStore = create<AppStore>()(
       ...initialState,
 
       setOnboardingComplete: (value) => set({ isOnboardingComplete: value }),
+      setHasSeenWelcome:     (value) => set({ hasSeenWelcome: value }),
       setPartnerQuizOnly:    (value) => set({ partnerQuizOnly: value }),
       bumpAppSession:        () => set((s) => ({ appSessionKey: s.appSessionKey + 1 })),
       setSelectedPartner:    (partner) => set({ selectedPartner: partner }),
@@ -242,7 +245,27 @@ export const useAppStore = create<AppStore>()(
             });
           } catch {
             if (requestId !== actionFetchRequestId) return;
-            set({ isActionLoading: false });
+            // generateActionPlanFromTestScores は内部で offline() にフォールバックするため
+            // ここに到達するのは想定外の throw のみ。通常アクションと同様にオフラインプランを提供する。
+            const offlineSteps = buildOfflineActionPlanSteps(
+              postTestCycle.baseA,
+              postTestCycle.provisionalB,
+              partner,
+              language,
+            );
+            const totalNominal = sumPlanNominalSeconds(offlineSteps);
+            const anchor = effectiveScore;
+            set({
+              activeActionPlan: {
+                steps: offlineSteps,
+                stepIndex: 0,
+                completedStepActualSeconds: [],
+                totalNominalSeconds: totalNominal,
+                anchorBrainScore: anchor,
+              },
+              currentAction: offlineSteps[0] ?? null,
+              isActionLoading: false,
+            });
           }
           return;
         }
@@ -566,7 +589,7 @@ export const useAppStore = create<AppStore>()(
       },
 
       resetAll: () => {
-        const { userId } = get();
+        const { userId, hasSeenWelcome } = get();
         // Firestore のユーザーデータ（プロフィール + scoreHistory）を非同期で削除
         // GDPR / CCPA / App Store ガイドライン: ユーザー操作で全データを完全消去できること
         if (userId) {
@@ -574,8 +597,8 @@ export const useAppStore = create<AppStore>()(
             if (__DEV__) console.warn('[resetAll] deleteUserData failed', e);
           });
         }
-        // ローカル状態をリセット（userId は維持して匿名アカウントは継続）
-        set({ ...initialState, userId, badges: initBadges() });
+        // ローカル状態をリセット（userId・hasSeenWelcome は維持）
+        set({ ...initialState, userId, hasSeenWelcome, badges: initBadges() });
         void i18n.changeLanguage(initialState.language);
       },
     }),
@@ -630,6 +653,7 @@ export const useAppStore = create<AppStore>()(
       },
       partialize: (state) => ({
         isOnboardingComplete:  state.isOnboardingComplete,
+        hasSeenWelcome:        state.hasSeenWelcome,
         partnerQuizOnly:       state.partnerQuizOnly,
         selectedPartner:       state.selectedPartner,
         language:              state.language,

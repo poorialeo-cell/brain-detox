@@ -17,11 +17,13 @@
 
 `docs/` 配下の全 HTML ファイルと `legal/` 配下の Markdown ファイルで以下を実際の値に置換してください。
 
-| プレースホルダー | 置換例 |
-|---|---|
-| `[YOUR_CONTACT_EMAIL]` | `support@brain-detox.app` |
+
+| プレースホルダー                      | 置換例                                  |
+| ----------------------------- | ------------------------------------ |
+| `[YOUR_CONTACT_EMAIL]`        | `support@brain-detox.app`            |
 | `[YOUR_NAME_OR_ORGANIZATION]` | `Taro Yamada` または `Brain Detox Inc.` |
-| `[YOUR_GITHUB_USERNAME]` | `your-github-handle` |
+| `[YOUR_GITHUB_USERNAME]`      | `your-github-handle`                 |
+
 
 PowerShell での一括置換例:
 
@@ -50,8 +52,8 @@ git push origin main
 
 1. GitHub のリポジトリページ → **Settings** → **Pages**
 2. 「Build and deployment」セクションで:
-   - **Source**: `Deploy from a branch`
-   - **Branch**: `main` / `/docs` フォルダを選択
+  - **Source**: `Deploy from a branch`
+  - **Branch**: `main` / `/docs` フォルダを選択
 3. **Save** をクリック
 4. 数分後に `https://<YOUR_GITHUB_USERNAME>.github.io/brain-detox/` で公開される
 
@@ -59,15 +61,17 @@ git push origin main
 
 ブラウザで以下にアクセスして表示されることを確認:
 
-| ページ | URL |
-|---|---|
-| ランディング | `https://<USER>.github.io/brain-detox/` |
-| プライバシー（日） | `https://<USER>.github.io/brain-detox/privacy-ja.html` |
-| プライバシー（英） | `https://<USER>.github.io/brain-detox/privacy-en.html` |
+
+| ページ        | URL                                                    |
+| ---------- | ------------------------------------------------------ |
+| ランディング     | `https://<USER>.github.io/brain-detox/`                |
+| プライバシー（日）  | `https://<USER>.github.io/brain-detox/privacy-ja.html` |
+| プライバシー（英）  | `https://<USER>.github.io/brain-detox/privacy-en.html` |
 | プライバシー（タイ） | `https://<USER>.github.io/brain-detox/privacy-th.html` |
-| 規約（日） | `https://<USER>.github.io/brain-detox/terms-ja.html` |
-| 規約（英） | `https://<USER>.github.io/brain-detox/terms-en.html` |
-| 規約（タイ） | `https://<USER>.github.io/brain-detox/terms-th.html` |
+| 規約（日）      | `https://<USER>.github.io/brain-detox/terms-ja.html`   |
+| 規約（英）      | `https://<USER>.github.io/brain-detox/terms-en.html`   |
+| 規約（タイ）     | `https://<USER>.github.io/brain-detox/terms-th.html`   |
+
 
 ### 5. アプリ内リンクの設定
 
@@ -88,9 +92,9 @@ git push origin main
 
 1. ドメインを取得（例: `brain-detox.app`）
 2. `docs/CNAME` ファイルを作成し、ドメイン名のみを記載
-   ```
+  ```
    brain-detox.app
-   ```
+  ```
 3. DNS で CNAME レコードを `<USER>.github.io` に向ける
 4. GitHub Pages 設定でカスタムドメインを入力 → **Enforce HTTPS** にチェック
 
@@ -107,7 +111,9 @@ git push origin main
 ## 更新の流れ
 
 ポリシーを修正したら:
+
 1. `legal/*.md` を編集（原本）
 2. `docs/*.html` の対応部分を編集
 3. 各ファイル冒頭の「最終更新日」を更新
 4. `git push` で自動デプロイ
+

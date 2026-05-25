@@ -8,6 +8,7 @@ import { useAppStore } from '../store/useAppStore';
 import { navigationRef } from './navigationRef';
 import TabBar from '../components/TabBar';
 
+import WelcomeScreen from '../screens/WelcomeScreen';
 import QuizScreen from '../screens/QuizScreen';
 import PartnerScreen from '../screens/PartnerScreen';
 import BrainRotTestScreen from '../screens/BrainRotTestScreen';
@@ -43,11 +44,15 @@ function MainTabs() {
 
 export default function AppNavigator() {
   const isOnboardingComplete = useAppStore((s) => s.isOnboardingComplete);
+  const hasSeenWelcome       = useAppStore((s) => s.hasSeenWelcome);
 
   return (
     <NavigationContainer ref={navigationRef}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {!isOnboardingComplete ? (
+        {!hasSeenWelcome ? (
+          // 初回起動：ようこそ画面のみ表示（完了後に hasSeenWelcome=true → 再レンダリング）
+          <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ animation: 'fade', gestureEnabled: false }} />
+        ) : !isOnboardingComplete ? (
           <>
             <Stack.Screen name="Quiz"         component={QuizScreen}         options={{ animation: 'fade' }} />
             <Stack.Screen name="PartnerResult" component={PartnerScreen}      options={{ animation: 'slide_from_bottom' }} />
@@ -55,10 +60,11 @@ export default function AppNavigator() {
         ) : (
           <>
             <Stack.Screen name="Main"             component={MainTabs}              options={{ animation: 'fade' }} />
-            <Stack.Screen name="BrainRotTest"     component={BrainRotTestScreen}  options={{ animation: 'slide_from_bottom', presentation: 'modal' }} />
+            <Stack.Screen name="Welcome"          component={WelcomeScreen}         options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="BrainRotTest"     component={BrainRotTestScreen}    options={{ animation: 'slide_from_bottom', presentation: 'modal' }} />
             <Stack.Screen name="DataResetConfirm" component={DataResetConfirmScreen} options={{ animation: 'slide_from_bottom', presentation: 'modal' }} />
-            <Stack.Screen name="ThemeSelect"      component={ThemeSelectScreen} options={{ animation: 'slide_from_right' }} />
-            <Stack.Screen name="LanguageSelect"   component={LanguageSelectScreen} options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="ThemeSelect"      component={ThemeSelectScreen}     options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="LanguageSelect"   component={LanguageSelectScreen}  options={{ animation: 'slide_from_right' }} />
           </>
         )}
       </Stack.Navigator>

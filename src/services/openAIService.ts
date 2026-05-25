@@ -403,20 +403,20 @@ export async function generateActionPlanFromTestScores(
   const userMessage =
     params.language === 'ja'
       ? `テスト直前スコア A=${params.baseA}、テスト後暫定 B=${params.provisionalB}（傾向: ${band}）。
-カタログの baseId **だけ**を使い、**4〜7個**を**実行順**に並べる。各 id の nominal_sec の合計が **${PLAN_DURATION_LO}〜${PLAN_DURATION_HI} 秒**（約30分前後）になること。
-Bが低い・A−Bが大きいときは、脳の切り替え・回復に効くステップを優先。
+カタログの baseId **だけ**を使い、**4〜10個**を**実行順**に並べる。
+Bが低い・A−Bが大きいときは、脳の切り替え・回復に効くステップを優先し、できるだけ種類（timer/breathing）を分散させる。
 
 カタログ（タブ区切り）:
 ${catalog}
 
 JSON のみ: {"ordered_base_ids":["id1","id2",...]}`
       : params.language === 'th'
-        ? `A=${params.baseA}, B=${params.provisionalB} (${band}). Use ONLY baseIds. Order 4-7 steps. Sum nominal_sec ${PLAN_DURATION_LO}-${PLAN_DURATION_HI}s.
+        ? `A=${params.baseA}, B=${params.provisionalB} (${band}). Use ONLY baseIds from catalog. Pick 4-10 steps in order. When B is low or A−B is large, prefer recovery steps. Vary types (timer/breathing).
 Catalog:
 ${catalog}
 JSON only: {"ordered_base_ids":["..."]}`
         : `A=${params.baseA} (before test), B=${params.provisionalB} after test (${band}).
-Use ONLY baseIds from catalog. Pick **4-7** steps in order. Sum of nominal_sec must be **${PLAN_DURATION_LO}-${PLAN_DURATION_HI} seconds** (~30 min). When B is low or A−B is large, prefer recovery-focused steps.
+Use ONLY baseIds from catalog. Pick **4-10** steps in order. When B is low or A−B is large, prefer recovery-focused steps. Vary activity types (timer/breathing).
 
 Catalog:
 ${catalog}
@@ -442,11 +442,8 @@ JSON only: {"ordered_base_ids":["id1",...]}`;
       if (getActionBaseById(id)) validated.push(id);
     }
     if (validated.length < 2) return offline();
-    let sumNom = 0;
-    for (const id of validated) {
-      sumNom += getActionBaseById(id)!.nominalSeconds;
-    }
-    if (sumNom < PLAN_DURATION_LO - 240 || sumNom > PLAN_DURATION_HI + 420) return offline();
+    // カタログ全体の合計が1590秒しかないため、アイテム数による合計チェックは行わない
+    // （「4-7個で1380-2220秒」という矛盾した制約が原因でオフラインになるのを防ぐ）
 
     const steps: ActionSuggestion[] = [];
     for (const id of validated) {

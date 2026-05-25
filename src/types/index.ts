@@ -97,6 +97,8 @@ export interface Badge {
 export interface AppState {
   // オンボーディング
   isOnboardingComplete: boolean;
+  /** 初回ようこそ画面を見たかどうか（データリセットでも保持） */
+  hasSeenWelcome: boolean;
   /** 設定からの「パートナー変更」時は診断の q4,q5 のみ出す */
   partnerQuizOnly: boolean;
   /** App ルート強制リマウント用（パートナー変更後のキャッシュ排除）永続化しない */
@@ -165,6 +167,7 @@ export interface AppState {
 }
 
 export type RootStackParamList = {
+  Welcome: undefined;
   Quiz: undefined;
   PartnerResult: { partner: PartnerType };
   BrainRotTest: undefined;

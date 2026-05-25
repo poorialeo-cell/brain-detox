@@ -448,6 +448,8 @@ export default function ActionScreen() {
     useAppStore.getState().applyTestResult(delta);
     useAppStore.getState().markTestDone();
     switchTab('action');
+    // useFocusEffect は同一画面内のタブ切替で再発火しないため、明示的に取得を開始する
+    void fetchAction();
   };
 
   const cardOpacity    = useRef(new Animated.Value(0)).current;

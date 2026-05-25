@@ -96,6 +96,15 @@
     "limitDaily": "1日のテストは2回までです。日が変わってから、またはまた明日お試しください。",
     "limitCooldown": "前回のテストから6時間以上空けてください。次は {{time}} 頃から受験できます。",
     "limitDismiss": "閉じる",
+    "intro": {
+      "heading": "2分 Vibe Check",
+      "description": "認知機能を3つのミニゲームで測定します。\n結果はブレインスコアに反映されます。",
+      "duration": "所要時間：約2分",
+      "phase1": "① Color Swerve — 色の判断力",
+      "phase2": "② Synapse Match — 短期記憶",
+      "phase3": "③ Focus Shield — 集中の持続",
+      "startButton": "テストを始める"
+    },
     "vibe": {
       "title": "2分 Vibe Check",
       "timeLeft": "残り {{sec}} 秒",
@@ -340,6 +349,29 @@
     "timerFinishedTitle": "{{partner}} — タイマー終了",
     "timerFinishedBody": "「{{title}}」の設定時間が終わりました。アプリで完了を記録できます。"
   },
+  "welcome": {
+    "skip": "スキップ",
+    "next": "次へ",
+    "start": "はじめる",
+    "close": "閉じる",
+    "slides": [
+      {
+        "icon": "🧠",
+        "title": "ブレインロットとは？",
+        "body": "ショート動画を見すぎると、脳の集中力・記憶力・思考力が少しずつ低下します。これが「ブレインロット」です。Brain Detox はその回復をサポートするアプリです。"
+      },
+      {
+        "icon": "🚀",
+        "title": "アプリの基本的な流れ",
+        "body": "①診断クイズでAIパートナーを決める\n②パートナーが毎日のアクションを提案\n③アクションを完了してブレインスコアを上げる\n④スコアが上がるほど脳は健康になっていく"
+      },
+      {
+        "icon": "⚡",
+        "title": "定期テスト（Vibe Check）",
+        "body": "2分間の3種類のミニゲームで認知機能を測定します。Color Swerve・Synapse Match・Focus Shield の結果がブレインスコアに反映されます。定期的に挑戦しよう！"
+      }
+    ]
+  },
   "settings": {
     "title": "設定",
     "sectionPartner": "パートナー",
@@ -372,6 +404,8 @@
     "resetExecute": "すべて削除して初期状態へ",
     "version": "バージョン",
     "sectionAbout": "アプリ情報",
+    "howToUse": "アプリの使い方を見る",
+    "howToUseDesc": "機能や流れをもう一度確認する",
     "privacyPolicy": "プライバシーポリシー",
     "privacyPolicyDesc": "個人情報の取り扱いについて",
     "termsOfService": "利用規約",
