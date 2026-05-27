@@ -1,4 +1,4 @@
-# Terms of Service
+﻿# Terms of Service
 
 **Last Updated: May 24, 2026**
 
@@ -114,7 +114,7 @@ Collection, use, and storage of data in the App is governed by our separately pu
 
 You may delete your data at any time by:
 
-- In-App: Settings → Reset Data
+- In-App: Settings ↁEReset Data
 - Email request (see Privacy Policy)
 
 ---

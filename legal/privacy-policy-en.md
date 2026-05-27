@@ -1,4 +1,4 @@
-# Privacy Policy
+﻿# Privacy Policy
 
 **Last Updated: May 24, 2026**
 
@@ -20,7 +20,7 @@ The following data is stored on our servers (Google Cloud Firestore, Tokyo regio
 | Data                  | Description                                                         | Purpose                                      |
 | --------------------- | ------------------------------------------------------------------- | -------------------------------------------- |
 | Partner selection     | Selected partner type (teacher / counselor / scientist / trainer)   | Personalize action suggestions               |
-| Brain score           | Numeric value 0–100                                                 | Core app feature (brain condition indicator) |
+| Brain score           | Numeric value 0 E00                                                 | Core app feature (brain condition indicator) |
 | Language preference   | `ja` / `en` / `th`                                                  | UI localization                              |
 | Score history         | Records of completed actions and brain-rot tests (up to 60 entries) | History display, streak calculation          |
 | Notification settings | Enabled/disabled, reminder times                                    | **Device-only**, not synced to cloud         |
@@ -60,7 +60,7 @@ To generate action suggestions and partner messages, the following is sent to th
 
 | Sent                                            | NOT Sent                     |
 | ----------------------------------------------- | ---------------------------- |
-| Current brain score (0–100)                     | Anonymous UID                |
+| Current brain score (0 E00)                     | Anonymous UID                |
 | Selected partner type                           | Device information           |
 | Language preference                             | Personally identifiable info |
 | Recent action summary (max 3 titles, truncated) | Detailed score history       |
@@ -86,7 +86,7 @@ Even after you uninstall the App, data stored in Firestore is retained so that r
 
 You can delete your data in two ways:
 
-1. **In-App: Settings → Reset Data**
+1. **In-App: Settings ↁEReset Data**
   - Removes profile and score history stored in Firestore
   - Erases all local settings on your device
 2. **By Request** (special cases)

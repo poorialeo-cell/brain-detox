@@ -1,40 +1,32 @@
-# 法的文書のホスティング手順
-
-`docs/` 配下の HTML（プライバシーポリシー・利用規約）を **GitHub Pages** で公開する手順です。**App Store / Google Play 申請にはこれらの URL が必須** です。
-
+﻿# 法的斁E��のホスチE��ング手頁E
+`docs/` 配下�E HTML�E��Eライバシーポリシー・利用規紁E��を **GitHub Pages** で公開する手頁E��す、E*App Store / Google Play 申請にはこれら�E URL が忁E��E* です、E
 ---
 
 ## 前提
 
-- GitHub に本リポジトリを push 済み
-- 公開リポジトリ（private の場合は GitHub Pro / Team 以上が必要）
-
+- GitHub に本リポジトリめEpush 済み
+- 公開リポジトリ�E�Erivate の場合�E GitHub Pro / Team 以上が忁E��E��E
 ---
 
-## 手順
+## 手頁E
+### 1. 斁E��冁E�Eプレースホルダーを置揁E
+`docs/` 配下�E全 HTML ファイルと `legal/` 配下�E Markdown ファイルで以下を実際の値に置換してください、E
 
-### 1. 文書内のプレースホルダーを置換
-
-`docs/` 配下の全 HTML ファイルと `legal/` 配下の Markdown ファイルで以下を実際の値に置換してください。
-
-
-| プレースホルダー                      | 置換例                                  |
+| プレースホルダー                      | 置換侁E                                 |
 | ----------------------------- | ------------------------------------ |
-| `[YOUR_CONTACT_EMAIL]`        | `support@brain-detox.app`            |
-| `[YOUR_NAME_OR_ORGANIZATION]` | `Taro Yamada` または `Brain Detox Inc.` |
-| `[YOUR_GITHUB_USERNAME]`      | `your-github-handle`                 |
+| `l.ikeda.937@gmail.com`        | `support@brain-detox.app`            |
+| `池田怜雄` | `Taro Yamada` また�E `Brain Detox Inc.` |
+| `poorialeo-cell`      | `your-github-handle`                 |
 
 
-PowerShell での一括置換例:
+PowerShell での一括置換侁E
 
 ```powershell
-# Email 置換
-Get-ChildItem -Path docs,legal -Include *.html,*.md -Recurse | ForEach-Object {
+# Email 置揁EGet-ChildItem -Path docs,legal -Include *.html,*.md -Recurse | ForEach-Object {
   (Get-Content $_.FullName -Raw) -replace '\[YOUR_CONTACT_EMAIL\]', 'support@example.com' |
     Set-Content $_.FullName -NoNewline
 }
-# 運営者名 置換
-Get-ChildItem -Path docs,legal -Include *.html,*.md -Recurse | ForEach-Object {
+# 運営老E�� 置揁EGet-ChildItem -Path docs,legal -Include *.html,*.md -Recurse | ForEach-Object {
   (Get-Content $_.FullName -Raw) -replace '\[YOUR_NAME_OR_ORGANIZATION\]', 'Your Name' |
     Set-Content $_.FullName -NoNewline
 }
@@ -48,72 +40,55 @@ git commit -m "docs: add privacy policy and terms of service"
 git push origin main
 ```
 
-### 3. GitHub Pages を有効化
-
-1. GitHub のリポジトリページ → **Settings** → **Pages**
+### 3. GitHub Pages を有効匁E
+1. GitHub のリポジトリペ�Eジ ↁE**Settings** ↁE**Pages**
 2. 「Build and deployment」セクションで:
   - **Source**: `Deploy from a branch`
-  - **Branch**: `main` / `/docs` フォルダを選択
-3. **Save** をクリック
-4. 数分後に `https://<YOUR_GITHUB_USERNAME>.github.io/brain-detox/` で公開される
+  - **Branch**: `main` / `/docs` フォルダを選抁E3. **Save** をクリチE��
+4. 数刁E��に `https://<YOUR_GITHUB_USERNAME>.github.io/brain-detox/` で公開される
 
-### 4. 公開 URL の確認
-
-ブラウザで以下にアクセスして表示されることを確認:
+### 4. 公閁EURL の確誁E
+ブラウザで以下にアクセスして表示されることを確誁E
 
 
-| ページ        | URL                                                    |
+| ペ�Eジ        | URL                                                    |
 | ---------- | ------------------------------------------------------ |
-| ランディング     | `https://<USER>.github.io/brain-detox/`                |
-| プライバシー（日）  | `https://<USER>.github.io/brain-detox/privacy-ja.html` |
-| プライバシー（英）  | `https://<USER>.github.io/brain-detox/privacy-en.html` |
-| プライバシー（タイ） | `https://<USER>.github.io/brain-detox/privacy-th.html` |
-| 規約（日）      | `https://<USER>.github.io/brain-detox/terms-ja.html`   |
-| 規約（英）      | `https://<USER>.github.io/brain-detox/terms-en.html`   |
-| 規約（タイ）     | `https://<USER>.github.io/brain-detox/terms-th.html`   |
+| ランチE��ング     | `https://<USER>.github.io/brain-detox/`                |
+| プライバシー�E�日�E�E | `https://<USER>.github.io/brain-detox/privacy-ja.html` |
+| プライバシー�E�英�E�E | `https://<USER>.github.io/brain-detox/privacy-en.html` |
+| プライバシー�E�タイ�E�E| `https://<USER>.github.io/brain-detox/privacy-th.html` |
+| 規紁E��日�E�E     | `https://<USER>.github.io/brain-detox/terms-ja.html`   |
+| 規紁E��英�E�E     | `https://<USER>.github.io/brain-detox/terms-en.html`   |
+| 規紁E��タイ�E�E    | `https://<USER>.github.io/brain-detox/terms-th.html`   |
 
 
-### 5. アプリ内リンクの設定
-
-`src/config/legalUrls.ts` で公開 URL を本番値に書き換えてください（初期値は `https://example.github.io/brain-detox/` がプレースホルダーで入っています）。
-
+### 5. アプリ冁E��ンクの設宁E
+`src/config/legalUrls.ts` で公閁EURL を本番値に書き換えてください�E��E期値は `https://example.github.io/brain-detox/` が�Eレースホルダーで入ってぁE��す）、E
 ### 6. ストア申請時に提示する URL
 
-- **App Store Connect → App Information → Privacy Policy URL**
-  - `https://<USER>.github.io/brain-detox/privacy-en.html`（メインの言語版）
-- **Google Play Console → App content → Privacy policy**
-  - 同上
-- **利用規約 URL**（任意・推奨）
-  - `https://<USER>.github.io/brain-detox/terms-en.html`
+- **App Store Connect ↁEApp Information ↁEPrivacy Policy URL**
+  - `https://<USER>.github.io/brain-detox/privacy-en.html`�E�メインの言語版�E�E- **Google Play Console ↁEApp content ↁEPrivacy policy**
+  - 同丁E- **利用規紁EURL**�E�任意�E推奨�E�E  - `https://<USER>.github.io/brain-detox/terms-en.html`
 
 ---
 
-## カスタムドメインを使う場合（任意）
-
-1. ドメインを取得（例: `brain-detox.app`）
-2. `docs/CNAME` ファイルを作成し、ドメイン名のみを記載
-  ```
+## カスタムドメインを使ぁE��合（任意！E
+1. ドメインを取得（侁E `brain-detox.app`�E�E2. `docs/CNAME` ファイルを作�Eし、ドメイン名�Eみを記輁E  ```
    brain-detox.app
   ```
-3. DNS で CNAME レコードを `<USER>.github.io` に向ける
-4. GitHub Pages 設定でカスタムドメインを入力 → **Enforce HTTPS** にチェック
+3. DNS で CNAME レコードを `<USER>.github.io` に向けめE4. GitHub Pages 設定でカスタムドメインを�E劁EↁE**Enforce HTTPS** にチェチE��
 
 ---
 
-## トラブルシューティング
+## トラブルシューチE��ング
 
-- **404**: `/docs` フォルダの設定ミス。`Settings → Pages` で確認
-- **CSS が当たらない**: `_assets/style.css` が push されているか確認
-- **タイ語が文字化け**: HTML の `<meta charset="UTF-8">` を確認（既に設定済み）
-
+- **404**: `/docs` フォルダの設定ミス。`Settings ↁEPages` で確誁E- **CSS が当たらなぁE*: `_assets/style.css` ぁEpush されてぁE��か確誁E- **タイ語が斁E��化ぁE*: HTML の `<meta charset="UTF-8">` を確認（既に設定済み�E�E
 ---
 
 ## 更新の流れ
 
-ポリシーを修正したら:
+ポリシーを修正しためE
 
-1. `legal/*.md` を編集（原本）
-2. `docs/*.html` の対応部分を編集
-3. 各ファイル冒頭の「最終更新日」を更新
+1. `legal/*.md` を編雁E��原本�E�E2. `docs/*.html` の対応部刁E��編雁E3. 吁E��ァイル冒頭の「最終更新日」を更新
 4. `git push` で自動デプロイ
 
