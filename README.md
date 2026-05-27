@@ -164,7 +164,7 @@ npx eas-cli build --profile production --platform android
 | OpenAI API キーはサーバー側 Secret Manager のみ       | ✅                      |
 | Firebase 匿名認証 + AsyncStorage で永続化           | ✅                      |
 | Firebase App Check（モニタリングモード）               | ⚠️ リリース後に enforce 化を推奨 |
-| OpenAI プロキシのレート制限                           | ⚠️ 未実装（将来課題）           |
+| OpenAI プロキシのレート制限（50回/日・10回/分）          | ✅                      |
 
 
 ---
