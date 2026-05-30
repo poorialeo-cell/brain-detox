@@ -42,7 +42,7 @@ module.exports = {
       backgroundColor: '#ffffff',
     },
     ios: {
-      supportsTablet: true,
+        supportsTablet: false,
       bundleIdentifier: 'com.braindetox.app',
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
